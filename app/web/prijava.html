@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Prijava</title>
+<style>
+/* The site's dark look (site/src/brand.ts): slate page, near-white button with a slate label, coral for errors.
+   No red button. System fonts only: nothing is loaded from another site. */
+:root{--page:#232a35;--card:#3a4454;--ink:#f7f7f7;--text:#e5e7eb;--muted:#c4c8d0;--line:#8791a3;--btn:#f7f7f7;--btn-text:#232a35;--btn-hover:#e0e0e0;--err:#ffb3ad}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--page);color:var(--text);font:400 16px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1{font:800 22px/1.2 Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);margin:0 0 16px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid rgb(255 255 255/.1)}
+.bar img{height:44px;width:auto;display:block}
+.bar a{color:var(--text);font-size:14px;text-decoration:underline;padding:12px 0}
+main{display:flex;justify-content:center;padding:32px 16px calc(32px + env(safe-area-inset-bottom))}
+.card{width:100%;max-width:25rem;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:24px;box-shadow:0 20px 50px rgb(0 0 0/.35)}
+#msg{margin:0 0 16px;font-size:14px;color:var(--muted)}#msg:empty{display:none}#msg.err{color:var(--err)}
+.note{margin:0 0 16px;padding:10px 12px;border-radius:10px;background:rgb(255 255 255/.08);font-size:14px;color:var(--ink)}
+label{display:block;font-size:14px;font-weight:500;color:var(--text);margin:0 0 4px}
+.f{margin:0 0 14px}
+input:not([type=checkbox]){display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
+input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.chk{display:flex;gap:12px;align-items:flex-start;margin:10px 0;font-weight:400}
+.chk input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--btn)}
+button{display:block;width:100%;min-height:48px;margin-top:16px;padding:12px 16px;font-family:inherit;font-weight:600;font-size:16px;line-height:1.2;color:var(--btn-text);background:var(--btn);border:1px solid var(--btn);border-radius:12px;cursor:pointer}
+button:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+button.plain{background:transparent;color:var(--ink);border-color:var(--line)}
+button.plain:hover{background:rgb(255 255 255/.08)}
+.links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;margin-top:16px;font-size:14px}
+.links a{color:var(--text);text-decoration:underline;padding:10px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<!-- Login, signup, forgot and reset in one page. The site proxies /prijava (Croatian) and /en/prijava (English) here.
+     The language comes from the path. Wording is a placeholder until Dunia approves the texts. -->
+<div class="bar">
+  <a href="/" id="home-logo"><img src="/prijava-logo.svg" alt="Točkica na i"></a>
+  <a href="/" id="back"></a>
+</div>
+<main>
+<div class="card">
+<p id="msg" role="status"></p>
+
+<form id="login-form" hidden>
+  <h1 data-t="loginTitle"></h1>
+  <div class="f"><label for="loginEmail" data-t="email"></label>
+  <input id="loginEmail" type="email" autocomplete="username" required></div>
+  <div class="f"><label for="loginPassword" data-t="password"></label>
+  <input id="loginPassword" type="password" autocomplete="current-password" required></div>
+  <button type="submit" data-t="loginSubmit"></button>
+  <p class="links"><a href="#forgot" data-go="forgot-form" data-t="forgot"></a><a href="#signup" data-go="email-form" data-t="signup"></a></p>
+</form>
+
+<form id="email-form" hidden>
+  <h1 data-t="signup"></h1>
+  <div class="f"><label for="email" data-t="email"></label>
+  <input id="email" type="email" autocomplete="email" required></div>
+  <button type="submit" data-t="sendLink"></button>
+  <p class="links"><a href="#login" data-go="login-form" data-t="haveAccount"></a></p>
+</form>
+
+<form id="forgot-form" hidden>
+  <h1 data-t="forgot"></h1>
+  <div class="f"><label for="forgotEmail" data-t="email"></label>
+  <input id="forgotEmail" type="email" autocomplete="email" required></div>
+  <button type="submit" data-t="sendReset"></button>
+  <p class="links"><a href="#login" data-go="login-form" data-t="backToLogin"></a></p>
+</form>
+
+<form id="reset-form" hidden>
+  <h1 data-t="resetTitle"></h1>
+  <p id="resetting" class="note"></p>
+  <div class="f"><label for="newPassword" data-t="newPassword"></label>
+  <input id="newPassword" type="password" minlength="8" autocomplete="new-password" required></div>
+  <button type="submit" data-t="savePassword"></button>
+</form>
+
+<form id="profile-form" hidden>
+  <h1 data-t="signup"></h1>
+  <p id="confirming" class="note"></p>
+  <div class="f"><label for="firstName" data-t="firstName"></label>
+  <input id="firstName" autocomplete="given-name" required></div>
+  <div class="f"><label for="lastName" data-t="lastName"></label>
+  <input id="lastName" autocomplete="family-name" required></div>
+  <div class="f"><label for="birthDate" data-t="birthDate"></label>
+  <input id="birthDate" type="date" autocomplete="bday" required></div>
+  <div class="f"><label for="password" data-t="choosePassword"></label>
+  <input id="password" type="password" minlength="8" autocomplete="new-password" required></div>
+  <label class="chk"><input id="acceptedTerms" type="checkbox" required><span data-t="terms"></span></label>
+  <label class="chk"><input id="marketingOptIn" type="checkbox"><span data-t="marketing"></span></label>
+  <button type="submit" data-t="createAccount"></button>
+</form>
+
+<div id="done" hidden>
+  <h1 data-t="myAccount"></h1>
+  <p id="who"></p>
+  <button id="logout" type="button" class="plain" data-t="logout"></button>
+</div>
+</div>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const EN = location.pathname.startsWith('/en/');
+  const TEXT = {
+    hr: {
+      pageTitle: 'Prijava', back: 'Natrag na stranicu', loginTitle: 'Prijava', email: 'Email', password: 'Lozinka',
+      loginSubmit: 'Prijavi me', forgot: 'Zaboravljena lozinka?', signup: 'Registracija', haveAccount: 'Već imaš račun? Prijavi se',
+      backToLogin: 'Natrag na prijavu', sendLink: 'Pošalji mi poveznicu', sendReset: 'Pošalji poveznicu za novu lozinku',
+      resetTitle: 'Nova lozinka', newPassword: 'Nova lozinka (najmanje 8 znakova)', savePassword: 'Spremi lozinku',
+      firstName: 'Ime', lastName: 'Prezime', birthDate: 'Datum rođenja', choosePassword: 'Lozinka (najmanje 8 znakova)',
+      terms: 'Prihvaćam uvjete korištenja (tekst slijedi)', marketing: 'Šaljite mi novosti (nije obavezno)',
+      createAccount: 'Napravi račun', myAccount: 'Moj račun', logout: 'Odjava',
+      signedInAs: 'Prijavljeni račun: {name} ({email}).', loggedOut: 'Odjavljen si.',
+      linkSent: 'Provjeri email i klikni poveznicu koju smo poslali.', badEmail: 'Email adresa nije ispravna.',
+      later: 'Trenutno nije dostupno, pokušaj kasnije.', resetSent: 'Ako ta adresa ima račun, poslali smo poveznicu. Provjeri email.',
+      wrongLogin: 'Pogrešan email ili lozinka.', tooMany: 'Previše pokušaja. Pokušaj ponovno za 15 minuta.', noAccount: 'Za ovu prijavu ne postoji račun.',
+      confirmed: 'Email je potvrđen.', confirmedFill: 'Email je potvrđen. Upiši svoje podatke.',
+      resetting: 'Biraš novu lozinku za {email}.', resettingFallback: 'tvoj račun',
+      creating: 'Radimo račun za {email}.', creatingFallback: 'adresu na koju je poslana poveznica',
+      pwBad: 'Lozinka je prekratka ili preslaba.', wrong: 'Nešto je pošlo po zlu.', check: 'Provjeri polja: {fields}.',
+      expired: 'Poveznica nije ispravna ili je istekla. Zatraži novu.',
+    },
+    en: {
+      pageTitle: 'Log in', back: 'Back to the site', loginTitle: 'Log in', email: 'Email', password: 'Password',
+      loginSubmit: 'Log in', forgot: 'Forgot your password?', signup: 'Sign up', haveAccount: 'Already have an account? Log in',
+      backToLogin: 'Back to log in', sendLink: 'Send me the link', sendReset: 'Send me a reset link',
+      resetTitle: 'New password', newPassword: 'New password (8 characters or more)', savePassword: 'Save password',
+      firstName: 'First name', lastName: 'Last name', birthDate: 'Date of birth', choosePassword: 'Password (8 characters or more)',
+      terms: 'I accept the terms (text to come)', marketing: 'Send me news (optional)',
+      createAccount: 'Create my account', myAccount: 'My account', logout: 'Log out',
+      signedInAs: 'Signed in as {name} ({email}).', loggedOut: 'Logged out.',
+      linkSent: 'Check your email and click the link we sent.', badEmail: 'That email address does not look right.',
+      later: 'Not available right now, try again later.', resetSent: 'If that address has an account, we sent a reset link. Check your email.',
+      wrongLogin: 'Wrong email or password.', tooMany: 'Too many attempts. Try again in 15 minutes.', noAccount: 'There is no account for this login.',
+      confirmed: 'Your email is confirmed.', confirmedFill: 'Your email is confirmed. Fill in your details.',
+      resetting: 'Choosing a new password for {email}.', resettingFallback: 'your account',
+      creating: 'Creating an account for {email}.', creatingFallback: 'the address the link was sent to',
+      pwBad: 'That password is too short or too weak.', wrong: 'Something went wrong.', check: 'Please check: {fields}.',
+      expired: 'That link is wrong or has expired. Ask for a new one.',
+    },
+  }[EN ? 'en' : 'hr'];
+  const t = (key, vars = {}) => TEXT[key].replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+
+  document.documentElement.lang = EN ? 'en' : 'hr';
+  document.title = t('pageTitle');
+  $('back').textContent = t('back');
+  for (const a of [$('back'), $('home-logo')]) a.href = EN ? '/en' : '/';
+  document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
+
+  const FORMS = ['email-form', 'login-form', 'forgot-form', 'reset-form', 'profile-form', 'done'];
+  const IDLE = ['login-form'];
+  const show = (...ids) => FORMS.forEach((id) => { $(id).hidden = !ids.includes(id); });
+  const say = (text, isError) => { $('msg').textContent = text; $('msg').className = isError ? 'err' : ''; };
+  const api = (path, method, body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+
+  // Links that switch between login, signup and forgot stay on this page.
+  document.querySelectorAll('[data-go]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    say('');
+    show(a.dataset.go);
+    $(a.dataset.go).querySelector('input')?.focus();
+  }));
+
+  // Supabase sends the person back here with the token after the "#". A server never sees it, so this page reads it
+  // and takes it out of the address bar at once.
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const accessToken = hash.get('access_token');
+  const linkType = hash.get('type');
+  const linkError = hash.get('error_code');
+  if (location.hash) history.replaceState(null, '', location.pathname);
+
+  // Display only: the server checks the token with Supabase and takes the address from there.
+  const emailFromToken = (tok) => {
+    try { return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email; } catch { return null; }
+  };
+
+  async function showSignedIn() {
+    const r = await api('/api/me', 'GET');
+    if (r.status !== 200) return false;
+    const me = await r.json();
+    $('who').textContent = t('signedInAs', { name: `${me.firstName} ${me.lastName}`, email: me.email });
+    say('');
+    show('done');
+    return true;
+  }
+
+  $('email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await api('/api/signup/link', 'POST', { email: $('email').value });
+    say(r.status === 202 ? t('linkSent') : r.status === 400 ? t('badEmail') : t('later'), r.status !== 202);
+  });
+
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await api('/api/login', 'POST', { email: $('loginEmail').value, password: $('loginPassword').value });
+    if (r.status === 200) { $('loginPassword').value = ''; return void (await showSignedIn()); }
+    say(r.status === 401 ? t('wrongLogin') : r.status === 403 ? t('noAccount') : r.status === 429 ? t('tooMany') : t('later'), true);
+  });
+
+  $('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await api('/api/password/link', 'POST', { email: $('forgotEmail').value });
+    say(r.status === 202 ? t('resetSent') : r.status === 400 ? t('badEmail') : t('later'), r.status !== 202);
+  });
+
+  $('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await api('/api/password/reset', 'POST', { accessToken, password: $('newPassword').value });
+    if (r.status === 200) { $('newPassword').value = ''; return void (await showSignedIn()); }
+    const j = await r.json().catch(() => ({}));
+    say(j.fields ? t('pwBad') : r.status === 401 || r.status === 403 ? t('expired') : t('wrong'), true);
+    if (r.status === 401 || r.status === 403) show(...IDLE);
+  });
+
+  $('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const r = await api('/api/signup', 'POST', {
+      accessToken, firstName: $('firstName').value, lastName: $('lastName').value, birthDate: $('birthDate').value,
+      password: $('password').value, acceptedTerms: $('acceptedTerms').checked, marketingOptIn: $('marketingOptIn').checked,
+    });
+    if (r.status === 201) return void (await showSignedIn());
+    const j = await r.json().catch(() => ({}));
+    if (j.fields) say(t('check', { fields: Object.keys(j.fields).join(', ') }), true);
+    else say(r.status === 401 ? t('expired') : t('wrong'), true);
+    if (r.status === 401) show(...IDLE);
+  });
+
+  $('logout').addEventListener('click', async () => {
+    await api('/api/logout', 'POST', {});
+    say(t('loggedOut'));
+    show(...IDLE);
+  });
+
+  (async () => {
+    if (accessToken && linkType === 'recovery') {
+      $('resetting').textContent = t('resetting', { email: emailFromToken(accessToken) ?? t('resettingFallback') });
+      say(t('confirmed'));
+      show('reset-form');
+      return;
+    }
+    if (accessToken) {
+      $('confirming').textContent = t('creating', { email: emailFromToken(accessToken) ?? t('creatingFallback') });
+      say(t('confirmedFill'));
+      show('profile-form');
+      return;
+    }
+    if (await showSignedIn()) return;
+    if (linkError) say(t('expired'), true);
+    show(...IDLE);
+  })();
+})();
+</script>
+</body>
+</html>

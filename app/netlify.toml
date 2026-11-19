@@ -1,0 +1,16 @@
+# Region: set the function region to an EU one in the Netlify UI and note the result in docs/launch-accounts.md
+# (plan Task 1, step 4). Not set here because which plans allow choosing it is not confirmed.
+[build]
+  publish = "web"
+  functions = "server/functions"
+
+# The login page: one file, two paths. The language comes from the path (web/prijava.html). The site proxies both
+# (site/netlify.toml), and server/dev.js does the same rewrite for local work.
+[[redirects]]
+  from = "/prijava"
+  to = "/prijava.html"
+  status = 200
+[[redirects]]
+  from = "/en/prijava"
+  to = "/prijava.html"
+  status = 200
