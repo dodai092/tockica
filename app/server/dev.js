@@ -20,7 +20,7 @@ async function serveStatic(rawUrl, res) {
   } catch {
     return notFound();
   }
-  // The site proxies /prijava and /en/prijava (one page, the language comes from the path). netlify.toml rewrites the same.
+  // /prijava and /en/prijava are one page, the language comes from the path. The root netlify.toml rewrites the same.
   if (pathname === '/' || pathname === '/prijava' || pathname === '/en/prijava') pathname = '/prijava.html';
   const parts = pathname.split('/').filter(Boolean);
   // No dot-files, no parent folders, no backslashes or nul bytes, only known page types.

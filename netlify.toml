@@ -1,0 +1,29 @@
+# One repo, one Netlify site (ADR 0005, update 2026-11-19): the Astro site is published, the app's login page is copied
+# next to it, and /api/* is served by the app's Netlify Function. The visitor sees one domain, so the session cookie is
+# first-party and nothing is proxied to another address.
+#
+# Region: set the function region to an EU one in the Netlify UI and note the result in docs/launch-accounts.md
+# (plan Task 1, step 4). Not set here because which plans allow choosing it is not confirmed.
+[build]
+  command = "npm ci --prefix app && npm ci --prefix site && npm run build --prefix site && cp -R app/web/. site/dist/"
+  publish = "site/dist"
+  functions = "app/server/functions"
+
+[build.processing.html]
+  pretty_urls = false
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The login page: one file, two paths. The language comes from the path (app/web/prijava.html). server/dev.js does the
+# same rewrite for local work.
+[[redirects]]
+  from = "/prijava"
+  to = "/prijava.html"
+  status = 200
+[[redirects]]
+  from = "/en/prijava"
+  to = "/prijava.html"
+  status = 200

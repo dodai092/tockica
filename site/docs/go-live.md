@@ -6,7 +6,7 @@ production DNS.
 ## 1. Netlify site setup
 
 1. Netlify → Add new site → Import from Git → the client repo.
-2. Build settings are picked up from `netlify.toml` (build `npm run build`, publish `dist`).
+2. Build settings are picked up from the repo root `netlify.toml` (it builds the site, copies the app's login page next to it, publishes `site/dist`, and serves `/api/*` from the app function).
    Set the Node version to 22 (Site config → Environment → `NODE_VERSION = 22`).
 3. First deploy runs. Confirm the `*.netlify.app` URL renders.
 
