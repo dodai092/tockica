@@ -11,7 +11,7 @@
     "init-client": "node scripts/init-client.mjs",
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/check-launch-env.mjs && astro build",
     "sync:demo": "node scripts/sync-demo.mjs",
     "preview": "astro preview",
     "astro": "astro",
