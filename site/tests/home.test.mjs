@@ -160,7 +160,7 @@ for (const { lang, file } of pages) {
     const html = await read(file);
     const block = section(html, 'contact');
     assert.ok(/data-todo="[^"]*phone[^"]*"/.test(block), 'phone placeholder missing');
-    for (const fact of ['Ulica Ferde Rusana 8', 'info@tockicanai.hr', '17:00-20:00']) {
+    for (const fact of ['Ulica Ferde Rusana 8', 'info@tockicanai.hr', '17:00 - 20:00']) {
       assert.ok(block.includes(fact), `${fact} missing`);
     }
     for (const fact of ['Rusanova', '095 865']) {
