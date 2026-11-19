@@ -1,6 +1,6 @@
 // Contact facts from Dunia's homepage doc (layout table, Kontakt row). Phone is still missing
 // and item 8's own answer box is blank, so address and hours are as she wrote them, not re-confirmed.
-// Company seat (Ulica Antuna Bauera 22) is not on official papers yet and must not be published.
+// Company seat Ulica Antuna Bauera 22 is not on official papers yet. Antun approved publishing it on 2026-11-19.
 export const contact = {
   address: 'Ulica Ferde Rusana 8, Zagreb',
   email: 'info@tockicanai.hr',

@@ -40,21 +40,23 @@ test('groupByDay groups by studio day in start order and leaves empty days out',
   );
 });
 
-test('isBookable opens this studio week and the next, later weeks are not open yet', () => {
+test('isBookable opens up to 14 days ahead, later days are not open yet', () => {
   const monday = new Date('2026-11-16T09:00:00+01:00');
   const sunday = new Date('2026-11-22T22:00:00+01:00');
-  // Week of 16 Nov and the week of 23 Nov are open, the week of 30 Nov is not.
-  assert.equal(isBookable('2026-11-29T20:00:00+01:00', monday, '2000-01-01'), true);
-  assert.equal(isBookable('2026-11-30T07:30:00+01:00', monday, '2000-01-01'), false);
-  // The window is by studio week, so on the Sunday it is the same two weeks.
-  assert.equal(isBookable('2026-11-29T20:00:00+01:00', sunday, '2000-01-01'), true);
-  assert.equal(isBookable('2026-11-30T07:30:00+01:00', sunday, '2000-01-01'), false);
-  // The day after the Sunday starts a new week, and the window moves on.
-  assert.equal(isBookable('2026-11-30T07:30:00+01:00', new Date('2026-11-23T08:00:00+01:00'), '2000-01-01'), true);
+  // 14 days from Monday 16 Nov is Monday 30 Nov, 15 days is not open yet.
+  assert.equal(isBookable('2026-11-30T07:30:00+01:00', monday, '2000-01-01'), true);
+  assert.equal(isBookable('2026-12-01T07:30:00+01:00', monday, '2000-01-01'), false);
+  // The window rolls by day, so the next Sunday it reaches 6 December.
+  assert.equal(isBookable('2026-12-06T10:30:00+01:00', sunday, '2000-01-01'), true);
+  assert.equal(isBookable('2026-12-07T07:30:00+01:00', sunday, '2000-01-01'), false);
+});
+
+test('the 4 January classes open on 21 December, two weeks ahead', () => {
+  assert.equal(isBookable('2027-01-04T07:30:00+01:00', new Date('2026-12-21T09:00:00+01:00'), '2026-12-21'), true);
 });
 
 test('isBookable is false before the opening day, whatever the week', () => {
-  const now = new Date('2027-01-03T20:00:00+01:00');
-  assert.equal(isBookable('2027-01-04T07:30:00+01:00', now, '2027-01-04'), false);
-  assert.equal(isBookable('2027-01-04T07:30:00+01:00', new Date('2027-01-04T08:00:00+01:00'), '2027-01-04'), true);
+  const now = new Date('2026-12-20T20:00:00+01:00');
+  assert.equal(isBookable('2027-01-03T07:30:00+01:00', now, '2026-12-21'), false);
+  assert.equal(isBookable('2026-12-22T07:30:00+01:00', new Date('2026-12-21T08:00:00+01:00'), '2026-12-21'), true);
 });

@@ -5,7 +5,7 @@ export const en: Copy = {
   nav: {
     schedule: 'Schedule',
     instructors: 'Instructors',
-    packs: 'Packs',
+    packs: 'Class Packs',
     waitlist: 'Waiting list',
     sculpt: 'Sculpt Room',
     contact: 'Contact',
@@ -53,10 +53,11 @@ export const en: Copy = {
       ],
     },
     offer: {
-      label: 'Intro packs, once per account',
+      label: 'For your first ride',
+      labelSub: 'A special offer for your first visit.',
       colDiscount: 'Discount',
       firstTime: 'First time here',
-      packs: 'All packs',
+      packs: 'All class packs',
     },
     sculptBand: {
       heading: 'Sculpt Room Rent',
@@ -81,8 +82,6 @@ export const en: Copy = {
     back: 'All instructors',
     teaches: 'Teaches',
     playlist: 'Favourite songs',
-    loadPlaylist: 'Load playlist',
-    spotifyNote: 'Loading connects you to Spotify.',
     nextClasses: 'Next classes',
   },
   firstTimePage: {
@@ -91,8 +90,8 @@ export const en: Copy = {
     lead: 'Every class is beginner friendly. You set the pace.',
   },
   packsPage: {
-    title: 'Packs',
-    description: 'Intro packs and the price per class.',
+    title: 'Class Packs',
+    description: 'Packs for your first visit and the price per class.',
     noteDuration: 'All Spin classes last 50 minutes.',
     noteAbs: 'ABS Spin is 30% cardio and 70% strength training, with lower intensity on the cardio part.',
     perClass: 'per class',
@@ -148,19 +147,21 @@ export const en: Copy = {
   waitlist: {
     title: 'Waitlist',
     description:
-      'Join the waitlist by 31 December and unlock 30 days of unlimited rides for €100. We open on 4 January.',
+      'Join the waitlist by 31 December and unlock 30 days of unlimited rides for €99. We open on 4 January.',
     heading: 'UNLOCK OUR LAUNCH OFFER.',
     offer: 'For everyone joining us at the start of this new chapter. This one is for you.',
     priceLine: '30 DAYS OF UNLIMITED RIDES',
-    price: '100 €',
+    price: '€99',
+    first: 'First 30 buyers by 31 December.',
     room: 'Spin classes in the Riders Room. 50 minutes, 20 bikes.',
+    detailsHeading: 'Offer terms',
     deadline: 'Join the waitlist by 31 December to unlock it.',
     terms:
-      'You will be able to make your purchase from 4th until 31st January. Your 30 days start from the day you purchase the offer.',
+      'Available to the first 30 people who purchase the offer by 31 December. After joining the waitlist, you’ll receive all the information about purchasing the offer and booking classes via e-mail. Your 30 days start on January 4, with the first class in the new Točkica na i. Bookings for the first classes open on 21 December, two weeks in advance.',
     notes: [
       '*Subject to class availability.',
-      '*Offer cannot be used by multiple people using 1 account.',
-      '*One-time offer, no pause, no refund.',
+      '*The offer is non-transferable and may only be used by the person whose account is linked to the offer.',
+      '*One-time offer. No pauses or refunds.',
     ],
     hoursHeading: 'Opening hours from 4 January',
     firstName: 'First name',
@@ -179,25 +180,27 @@ export const en: Copy = {
     birthHints: { day: 'DD', month: 'MM', year: 'YYYY' },
     // Antun's translation of Dunia's Croatian, Dunia approves.
     birthDateWhy: 'So we can celebrate your birthday with you.',
-    termsMissing: 'a cap on the number of people (maybe 100, Dunia to decide)',
     stepsHeading: 'How it works',
     steps: [
       {
         title: 'Join the waitlist',
         text: 'By 31 December, enter your first name, last name, email and date of birth.',
       },
-      { title: 'Unlock the offer', text: 'From 4 to 31 January, buy 30 days of unlimited rides for €100.' },
-      { title: 'Ride for 30 days', text: 'Your 30 days start from the day you purchase the offer.' },
+      {
+        title: 'Unlock the offer',
+        text: 'By 31 December, buy 30 days of unlimited rides for €99. The offer is for the first 30 buyers.',
+      },
+      { title: 'Ride for 30 days', text: 'Your 30 days start on January 4.' },
     ],
     timeline: [
-      { date: 'Dec 31', label: 'last day to join' },
-      { date: 'Jan 4', label: 'we open, buying starts' },
-      { date: 'Jan 31', label: 'last day to buy' },
+      { date: 'Dec 21', label: 'bookings open' },
+      { date: 'Dec 31', label: 'last day to join and buy' },
+      { date: 'Jan 4', label: 'we open, your 30 days start' },
     ],
   },
   waitlistThanks: {
     title: 'You are on the list',
-    text: 'Thanks for signing up. We open on 4 January, and you can buy the €100 offer from 4 to 31 January.',
+    text: 'Thanks for signing up. We open on 4 January, and you can buy the €99 offer until 31 December.',
     instagram: 'Follow us on Instagram',
     pendingMissing: 'how and when we tell you the offer is open',
     back: 'Back to the homepage',
@@ -205,7 +208,7 @@ export const en: Copy = {
   schedulePage: {
     title: 'Schedule',
     description: 'The class schedule at Točkica na i.',
-    soon: 'The schedule is a preview. Booking opens on 4 January.',
+    soon: 'Classes start on 4 January and you can book up to 2 weeks ahead. Booking goes live on 21 December.',
     demo: { text: 'Try the booking demo (not a real booking).', link: 'Open the demo' },
     weeks: 'Week',
     prevWeek: 'Previous week',
@@ -252,7 +255,7 @@ export const en: Copy = {
     loginTitle: 'Log in',
     soonTitle: 'Booking opens soon',
     soonText: 'Online booking opens soon. This is not a real booking yet.',
-    preview: 'The schedule is a preview. Booking opens on 4 January.',
+    preview: 'Classes start on 4 January. Booking goes live on 21 December.',
     changeBike: 'Change bike',
     backToSchedule: 'Back to the schedule',
     waitlist: 'Waiting list',

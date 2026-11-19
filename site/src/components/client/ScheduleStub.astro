@@ -4,6 +4,7 @@
 // this component and the two page files go away. Until then it shows the mock
 // schedule, a notice, and a placeholder for how to book.
 import Page from '~/components/client/Page.astro';
+import Faq from '~/components/client/home/Faq.astro';
 import Placeholder from '~/components/client/Placeholder.astro';
 import ScheduleList from '~/components/client/schedule/ScheduleList.astro';
 import SpinBike from '~/components/client/SpinBike.astro';
@@ -39,6 +40,7 @@ const notes = getCopy(lang).packsPage;
       {notes.noteAbs}
     </p>
   </section>
+  <Faq lang={lang} />
 </Page>
 
 <style is:global>

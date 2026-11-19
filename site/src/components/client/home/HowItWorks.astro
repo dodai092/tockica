@@ -9,11 +9,9 @@ interface Props {
   steps?: { title: string; text: string }[];
   /** Marks the last step as the goal (red border, red numeral). */
   goalLast?: boolean;
-  /** A date strip under the steps. */
-  timeline?: { date: string; label: string }[];
 }
 
-const { lang, heading, steps, goalLast = false, timeline } = Astro.props;
+const { lang, heading, steps, goalLast = false } = Astro.props;
 const home = getCopy(lang).home.how;
 const copy = { heading: heading ?? home.heading, steps: steps ?? home.steps };
 const lastIndex = copy.steps.length - 1;
@@ -52,51 +50,5 @@ const lastIndex = copy.steps.length - 1;
         })
       }
     </ol>
-    {
-      timeline && (
-        <ul class="tl mt-10 hidden gap-4 md:grid md:grid-cols-3">
-          {timeline.map((t, i) => (
-            <li class:list={[{ 'tl-mid': i === 1 }]}>
-              <b class="block font-heading text-xl font-extrabold text-heading">{t.date}</b>
-              <span class="text-default">{t.label}</span>
-            </li>
-          ))}
-        </ul>
-      )
-    }
   </div>
 </section>
-
-<style>
-  /* A horizontal rail with a dot per date. Hidden on a phone for now. */
-  .tl {
-    position: relative;
-    padding-top: 1.5rem;
-  }
-  .tl::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0.4375rem;
-    height: 2px;
-    background: rgb(67 80 104);
-  }
-  .tl li {
-    position: relative;
-  }
-  .tl li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: -1.5rem;
-    width: 0.875rem;
-    height: 0.875rem;
-    border-radius: 9999px;
-    border: 2px solid var(--aw-color-primary);
-    background: var(--aw-color-bg-page, #232a37);
-  }
-  .tl li.tl-mid::before {
-    background: var(--aw-color-primary);
-  }
-</style>

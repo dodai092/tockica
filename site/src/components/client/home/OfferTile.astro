@@ -25,6 +25,7 @@ const name = (n: number) => `${n} ${n === 1 ? t.classOne : t.classMany}`;
   <div class:list={['offer-box', { 'offer-strong': full }]}>
     <div class="offer-intro">
       <p id="offer-label" class="offer-label">{offer.label}</p>
+      <p class="offer-sub">{offer.labelSub}</p>
       <ul class="offer-intro-list">
         {
           intro.map((p) => (
@@ -124,6 +125,10 @@ const name = (n: number) => `${n} ${n === 1 ? t.classOne : t.classMany}`;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+  .offer-sub {
+    margin-top: -0.6rem;
+    font-size: 0.95rem;
   }
   .offer-ip {
     display: flex;

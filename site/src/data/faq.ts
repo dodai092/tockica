@@ -32,8 +32,9 @@ export const faq: FaqItem[] = [
   {
     q: { hr: 'Što ako moram otkazati?', en: 'What if I need to cancel?' },
     a: {
-      hr: 'Otkazivanje je moguće najkasnije 6 sati prije početka treninga.',
-      en: 'Cancellation window is 6 hours prior to the lesson.',
+      // The second paragraph is not Dunia's wording: Antun relayed the rule and approved it on 2026-11-17.
+      hr: 'Otkazivanje je moguće najkasnije 6 sati prije početka treninga.\nAko otkažeš kasnije, trening se ne vraća.',
+      en: 'Cancellation window is 6 hours prior to the lesson.\nIf you cancel later, the class is not refunded.',
     },
   },
   // Dunia's own text in both languages (2026-11-17), reproduced exactly, "kredite" included.

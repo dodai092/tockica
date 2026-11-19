@@ -153,16 +153,16 @@ const studioDow = (iso) =>
   new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Zagreb', weekday: 'short' }).format(new Date(iso));
 
 test('mock schedule: three weeks, Monday to Sunday', () => {
-  const all = buildMockSchedule(new Date('2026-12-02T10:00:00+01:00'));
+  const all = buildMockSchedule(new Date('2027-01-13T10:00:00+01:00'));
   const days = [...new Set(all.map((c) => studioDate(c.startsAt)))];
   assert.equal(days.length, 21);
-  assert.equal(days[0], '2026-11-30');
-  assert.equal(days.at(-1), '2026-12-20');
+  assert.equal(days[0], '2027-01-11');
+  assert.equal(days.at(-1), '2027-01-31');
   assert.ok(all.some((c) => studioDow(c.startsAt) === 'Sun'));
 });
 
 test('mock schedule: deterministic, unique ids, every row passes the contract', () => {
-  const now = new Date('2026-12-02T10:00:00+01:00');
+  const now = new Date('2027-01-13T10:00:00+01:00');
   const a = buildMockSchedule(now);
   assert.deepEqual(a, buildMockSchedule(now));
   assert.equal(new Set(a.map((c) => c.id)).size, a.length);
@@ -171,9 +171,9 @@ test('mock schedule: deterministic, unique ids, every row passes the contract', 
 });
 
 test("mock schedule: a Sunday still starts at that week's Monday, summer time keeps the studio hour", () => {
-  const sunday = buildMockSchedule(new Date('2026-12-06T12:00:00+01:00'));
-  assert.equal(studioDate(sunday[0].startsAt), '2026-11-30');
-  const summer = buildMockSchedule(new Date('2026-07-01T10:00:00+02:00'));
+  const sunday = buildMockSchedule(new Date('2027-01-17T12:00:00+01:00'));
+  assert.equal(studioDate(sunday[0].startsAt), '2027-01-11');
+  const summer = buildMockSchedule(new Date('2027-07-01T10:00:00+02:00'));
   const hours = new Set(
     summer.map((c) =>
       new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zagreb', timeStyle: 'short' }).format(new Date(c.startsAt))
@@ -182,8 +182,13 @@ test("mock schedule: a Sunday still starts at that week's Monday, summer time ke
   assert.ok(hours.has('17:30'));
 });
 
+test('mock schedule: nothing before the first class day, 4 January', () => {
+  const all = buildMockSchedule(new Date('2026-11-19T10:00:00+01:00'));
+  assert.equal(studioDate(all[0].startsAt), '2027-01-04');
+});
+
 test('mock schedule: has full classes and nearly full ones', () => {
-  const all = buildMockSchedule(new Date('2026-12-02T10:00:00+01:00'));
+  const all = buildMockSchedule(new Date('2027-01-13T10:00:00+01:00'));
   assert.ok(all.some((c) => c.freeBikes === 0));
   assert.ok(all.some((c) => c.freeBikes > 0 && c.freeBikes <= 3));
 });

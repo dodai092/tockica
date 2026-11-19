@@ -20,7 +20,7 @@ const t = copy.waitlist;
 // The form card is the brand slate accent, lighter than the page and the black hero. Fields sit in the page
 // slate. Focus is the heading white, errors the soft coral from brand.ts, so red stays the logo's.
 const field =
-  'block w-full rounded-(--aw-radius-card) border border-default/55 bg-page px-4 py-3 text-md text-heading placeholder:text-default/70 caret-heading transition-[border-color,box-shadow] duration-200 ease-in-out focus:border-heading aria-invalid:border-(--aw-color-error) focus:outline-none focus-visible:ring-2 focus-visible:ring-heading focus-visible:ring-offset-1 focus-visible:ring-offset-accent';
+  'block w-full rounded-(--aw-radius-card) border border-default/55 bg-page px-4 py-3 text-md text-heading placeholder:text-default/70 caret-heading transition-[border-color,box-shadow] duration-200 ease-in-out focus:border-heading max-md:py-2.5 aria-invalid:border-(--aw-color-error) focus:outline-none focus-visible:ring-2 focus-visible:ring-heading focus-visible:ring-offset-1 focus-visible:ring-offset-accent';
 const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0';
 ---
 
@@ -43,43 +43,36 @@ const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0'
     variant="hero"
     fill="rgb(0 0 0)"
     dim={0.3}
-    class="absolute -z-10 md:hidden top-[150px] -right-[40vw] w-[80vw]"
+    class="absolute -z-10 md:hidden top-[215px] -right-[40vw] w-[80vw]"
   />
   <div
-    class="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-8 px-4 pb-12 pt-20 sm:px-6 md:grid-cols-2 md:items-start md:gap-10 md:pb-28 md:pt-36"
+    class="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-8 px-4 pb-12 pt-[4.5rem] max-md:gap-5 sm:px-6 md:grid-cols-2 md:items-start md:gap-10 md:pb-28 md:pt-36"
   >
     <div>
       <h1 class="text-3xl font-extrabold tracking-[-0.02em] text-balance md:text-5xl">{t.heading}</h1>
-      <p class="mt-3 text-lg text-white/80">{t.offer}</p>
-      <p class="mt-8 text-xl font-bold leading-snug text-balance md:mt-12 md:text-3xl">{t.priceLine}</p>
+      <p class="mt-3 text-lg text-white/80 max-md:mt-2">{t.offer}</p>
+      <p class="mt-5 text-xl font-bold leading-snug text-balance md:mt-12 md:text-3xl">{t.priceLine}</p>
       <p class="font-heading text-[clamp(3.5rem,22vw,6rem)] font-extrabold leading-none tracking-[-0.03em] md:text-9xl">
         {t.price}
       </p>
-      <p class="mt-4 text-base text-balance text-white/85">{t.room}</p>
-      <p class="mt-8 inline-block rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-white">
-        {t.deadline}
-      </p>
-      <p class="mt-3 max-w-md text-base leading-6 text-white/85">{t.terms}</p>
-      <ul class="mt-3 max-w-md space-y-1 text-sm leading-5 text-white/75">
-        {t.notes.map((note) => <li>{note}</li>)}
-      </ul>
+      <p class="mt-2 border-l-[3px] border-primary pl-3 text-lg font-bold text-white md:mt-4">{t.first}</p>
     </div>
 
     <div class="w-full max-w-xl">
       <div
         id="waitlist-form"
-        class="scroll-mt-6 rounded-(--aw-radius-card) border border-white/10 bg-accent p-5 text-heading shadow-2xl sm:p-6 lg:p-8"
+        class="scroll-mt-6 rounded-(--aw-radius-card) border border-white/10 bg-accent p-5 text-heading shadow-2xl max-md:p-4 sm:p-6 lg:p-8"
       >
         <h2 class="text-2xl font-bold text-heading">{t.formHeading}</h2>
         <form
-          class="mt-5"
+          class="mt-5 max-md:mt-3"
           name="waitlist"
           method="POST"
           data-waitlist-form
           data-thanks={pathFor('waitlistThanks', lang)}
           data-errors={JSON.stringify(t.errors)}
         >
-          <div class="mb-4 grid grid-cols-2 gap-3">
+          <div class="mb-4 grid grid-cols-2 gap-3 max-md:mb-2.5">
             {
               (
                 [
@@ -107,7 +100,7 @@ const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0'
               ))
             }
           </div>
-          <div class="mb-4">
+          <div class="mb-4 max-md:mb-2.5">
             <label for="waitlist-email" class="block text-sm font-medium text-default">{copy.form.email}</label>
             <input
               type="email"
@@ -123,7 +116,11 @@ const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0'
             />
             <p class={errorText} id="waitlist-email-error" data-error></p>
           </div>
-          <fieldset class="mb-4 min-w-0" data-birth aria-describedby="waitlist-birth-why waitlist-birth-error">
+          <fieldset
+            class="mb-4 min-w-0 max-md:mb-2.5"
+            data-birth
+            aria-describedby="waitlist-birth-why waitlist-birth-error"
+          >
             <legend class="block text-sm font-medium text-default">{t.birthDate}</legend>
             <div class="mt-1 flex gap-3">
               {
@@ -135,7 +132,7 @@ const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0'
                   ] as const
                 ).map(([key, label, len, width, ac, hint]) => (
                   <div class={`min-w-0 ${width}`}>
-                    <label for={`waitlist-birth-${key}`} class="block text-xs text-default">
+                    <label for={`waitlist-birth-${key}`} class="block text-xs text-default max-md:sr-only">
                       {label}
                     </label>
                     <input
@@ -176,14 +173,13 @@ const errorText = 'mt-1 flex gap-1.5 text-sm text-(--aw-color-error) empty:mt-0'
             </label>
           </div>
           <p class={errorText} id="waitlist-consent-error" data-error></p>
-          <div class="mt-6 grid">
+          <div class="mt-6 grid max-md:mt-4">
             <Button variant="primary" type="submit" text={t.submit} />
           </div>
         </form>
       </div>
       {/* Developer flags for facts still missing. One block outside the card, so the form reads clean. */}
       <div class="mt-4 grid justify-items-start gap-2 text-sm">
-        <Placeholder lang={lang} label={t.termsMissing} />
         <Placeholder lang={lang} label="waitlist form is not connected to the booking database" />
       </div>
     </div>

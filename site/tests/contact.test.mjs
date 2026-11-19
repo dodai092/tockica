@@ -22,7 +22,7 @@ for (const { lang, file, h1 } of pages) {
     assert.ok(/data-todo="[^"]*phone[^"]*"/.test(html), 'phone placeholder missing');
     for (const fact of ['Ulica Ferde Rusana 8', 'info@tockicanai.hr', '17:00-20:00'])
       assert.ok(html.includes(fact), fact);
-    for (const secret of ['Bauera', 'Rusanova', '865 1335'])
+    for (const secret of ['Rusanova', '865 1335'])
       assert.ok(!html.includes(secret), `${secret} must not ship until Dunia confirms`);
   });
 

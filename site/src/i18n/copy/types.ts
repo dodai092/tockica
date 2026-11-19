@@ -42,7 +42,7 @@ export type Copy = {
       heading: string;
       steps: [{ title: string; text: string }, { title: string; text: string }, { title: string; text: string }];
     };
-    offer: { label: string; colDiscount: string; firstTime: string; packs: string };
+    offer: { label: string; labelSub: string; colDiscount: string; firstTime: string; packs: string };
     sculptBand: { heading: string; text: string; cta: string };
     faq: { heading: string };
     contact: { heading: string; write: string };
@@ -53,8 +53,6 @@ export type Copy = {
     back: string;
     teaches: string;
     playlist: string;
-    loadPlaylist: string;
-    spotifyNote: string;
     nextClasses: string;
   };
   firstTimePage: { title: string; description: string; lead: string };
@@ -102,9 +100,13 @@ export type Copy = {
     /** The offer as one display sentence, with the price set larger at its end. */
     priceLine: string;
     price: string;
+    /** One line under the price: who can buy. */
+    first: string;
+    /** Spin classes line, first line of the offer details block. `deadline` is the full deadline sentence, in the same block. */
     room: string;
     deadline: string;
-    /** Purchase window and when the 30 days start, under the deadline pill. */
+    detailsHeading: string;
+    /** Who can buy, how they hear about it, when the 30 days start and when bookings open, under the deadline pill. */
     terms: string;
     /** Footnotes under the terms: availability, not transferable, no pause and no refund. */
     notes: [string, string, string];
@@ -122,11 +124,9 @@ export type Copy = {
     birthHints: { day: string; month: string; year: string };
     /** The line under the birth date fields: why we ask for it. */
     birthDateWhy: string;
-    /** Names what is still missing from the terms, on the placeholder flag under them. */
-    termsMissing: string;
     stepsHeading: string;
     steps: [{ title: string; text: string }, { title: string; text: string }, { title: string; text: string }];
-    /** Three dates under the steps: last day to join, opening, last day to buy. */
+    /** Three dates in the offer details block, desktop only: bookings open, last day to join and buy, opening. */
     timeline: [{ date: string; label: string }, { date: string; label: string }, { date: string; label: string }];
   };
   waitlistThanks: { title: string; text: string; instagram: string; pendingMissing: string; back: string };

@@ -163,7 +163,7 @@ for (const { lang, file } of pages) {
     for (const fact of ['Ulica Ferde Rusana 8', 'info@tockicanai.hr', '17:00-20:00']) {
       assert.ok(block.includes(fact), `${fact} missing`);
     }
-    for (const fact of ['Rusanova', '095 865', 'Bauera']) {
+    for (const fact of ['Rusanova', '095 865']) {
       assert.ok(!html.includes(fact), `${fact} must not ship until Dunia confirms`);
     }
     assert.ok(block.includes(`href="${pathFor('contact', lang)}"`));

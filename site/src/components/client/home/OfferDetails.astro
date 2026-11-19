@@ -1,0 +1,43 @@
+---
+// The offer's details under the waitlist hero: the three dates (desktop only, a phone gets no strip), then one
+// card with the room line, Dunia's deadline sentence as the lead, the terms cut into one row per sentence and the
+// three footnotes in a flat panel. All her wording, moved out of the hero so the hero stays short (Antun, 2026-11-19).
+import { getCopy } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = getCopy(lang).waitlist;
+// Cut at sentence ends only (a full stop, then a capital). "4. siječnja" and "21.12., dva" stay whole.
+const sentences = t.terms.split(/(?<=\.)\s+(?=[A-ZŠĐČĆŽ])/);
+---
+
+<section data-section="offer-details" class="mx-auto max-w-7xl px-4 sm:px-6 pt-10 md:pt-12">
+  <ul class="mb-6 hidden gap-4 md:grid md:grid-cols-3" data-offer-dates>
+    {
+      t.timeline.map((d) => (
+        <li class="rounded-(--aw-radius-card) border border-gray-200 p-4 dark:border-slate-600">
+          <b class="block font-heading text-2xl font-extrabold text-heading">{d.date}</b>
+          <span class="text-default">{d.label}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <div class="rounded-(--aw-radius-card) border border-gray-200 p-6 dark:border-slate-600 md:p-8">
+    <h2 class="text-xl font-bold text-heading">{t.detailsHeading}</h2>
+    <p class="mt-1.5 text-default">{t.room}</p>
+    <p class="mt-5 text-xl font-bold leading-snug text-heading md:text-2xl">{t.deadline}</p>
+    <ul
+      class="mt-4 divide-y divide-gray-200 border-y border-gray-200 dark:divide-slate-700 dark:border-slate-700"
+      data-offer-terms
+    >
+      {sentences.map((sentence) => <li class="py-3.5 text-[17px] leading-normal text-default">{sentence}</li>)}
+    </ul>
+    <ul class="mt-5 space-y-2.5 rounded-xl bg-slate-700/60 px-5 py-4 leading-normal text-default" data-offer-notes>
+      {t.notes.map((note) => <li>{note}</li>)}
+    </ul>
+  </div>
+</section>

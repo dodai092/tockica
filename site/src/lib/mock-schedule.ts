@@ -3,6 +3,7 @@
 // times and instructors are real. The sheet marks ABS classes and nothing else, so every other class is Riders Room.
 // The bikes taken are made up. Delete with the endpoint when the app is proxied at that path.
 import { addDays, dayOfWeek, studioDay, STUDIO_ZONE } from './schedule-days.ts';
+import { firstClassOn } from '../data/waitlist.ts';
 import type { NextClass } from './schedule-feed.ts';
 
 const CAPACITY = 20;
@@ -83,9 +84,9 @@ function pickTaken(id: string, count: number): number[] {
   return pool.slice(0, count).sort((a, b) => a - b);
 }
 
-/** The current studio week (Monday to Sunday) and the two after it. Past classes are included. */
+/** The current studio week (Monday to Sunday) and the two after it, but never before the first class day. */
 export function buildMockSchedule(now: Date): NextClass[] {
-  const today = studioDay(now);
+  const today = studioDay(now) < firstClassOn ? firstClassOn : studioDay(now);
   const dow = dayOfWeek(today);
   const monday = addDays(today, 1 - dow);
   const out: NextClass[] = [];

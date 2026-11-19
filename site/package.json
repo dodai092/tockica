@@ -23,7 +23,7 @@
     "fix": "npm run fix:eslint && npm run fix:prettier",
     "fix:eslint": "eslint --fix .",
     "fix:prettier": "prettier -w .",
-    "test:sheet": "PUBLIC_BOOKING_OPENS_ON=2026-01-01 astro build && node --test tests/schedule-sheet.test.mjs; astro preview stop; astro build && astro preview stop",
+    "test:sheet": "PUBLIC_BOOKING_OPENS_ON=2026-01-01 PUBLIC_FIRST_CLASS_ON=2026-01-01 astro build && node --test tests/schedule-sheet.test.mjs; astro preview stop; astro build && astro preview stop",
     "test:quality": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:routes": "node scripts/check-quality-routes.mjs",
     "test:analytics": "node --test tests/analytics-events.browser.mjs",

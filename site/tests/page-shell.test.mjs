@@ -88,7 +88,7 @@ for (const { lang, file, self } of pages) {
       assert.ok(footer.includes(`href="${pathFor(key, lang)}"`), `${key} link missing`);
     }
     assert.ok(footer.includes('OIB HR37892279693'));
-    assert.ok(!footer.includes('Antuna Bauera'), 'unconfirmed seat must not ship');
+    assert.ok(footer.includes('Ulica Antuna Bauera 22'), 'company seat, approved 2026-11-19');
     assert.ok(!footer.includes('Rusanova'), 'unconfirmed address must not ship');
   });
 

@@ -23,14 +23,14 @@ export const addDays = (ymd: string, n: number): string => {
 export const mondayOf = (ymd: string): string => addDays(ymd, 1 - dayOfWeek(ymd));
 
 /**
- * A class can be booked from the opening day (`opensOn`), in the current studio week and the next. Before the opening
- * and for later weeks the class can be seen but is not open yet.
+ * A class can be booked from the opening day (`opensOn`), up to 14 days ahead (Dunia: "do 2 tjedna unaprijed"). Before
+ * the opening and for later days the class can be seen but is not open yet.
  */
 export const isBookable = (
   startsAt: string | Date,
   now: Date = new Date(),
   opensOn: string = bookingOpensOn
-): boolean => studioDay(now) >= opensOn && studioDay(startsAt) < addDays(mondayOf(studioDay(now)), 14);
+): boolean => studioDay(now) >= opensOn && studioDay(startsAt) <= addDays(studioDay(now), 14);
 
 /** Classes by studio day, in start order. A day with no class has no entry. */
 export function groupByDay<T extends Pick<NextClass, 'startsAt'>>(classes: T[]): Map<string, T[]> {

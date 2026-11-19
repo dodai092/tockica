@@ -5,6 +5,7 @@ import { Picture } from 'astro:assets';
 import Button from '~/components/ui/Button.astro';
 import Page from '~/components/client/Page.astro';
 import WaitlistHero from '~/components/client/home/WaitlistHero.astro';
+import OfferDetails from '~/components/client/home/OfferDetails.astro';
 import HowItWorks from '~/components/client/home/HowItWorks.astro';
 import Faq from '~/components/client/home/Faq.astro';
 import OpeningHours from '~/components/client/home/OpeningHours.astro';
@@ -24,8 +25,9 @@ const t = copy.waitlist;
 
 <Page lang={lang} route="home" title={t.title} description={t.description} overlayBar>
   <WaitlistHero lang={lang} />
+  <OfferDetails lang={lang} />
 
-  <HowItWorks lang={lang} heading={t.stepsHeading} steps={t.steps} goalLast timeline={t.timeline} />
+  <HowItWorks lang={lang} heading={t.stepsHeading} steps={t.steps} goalLast />
   <Faq lang={lang} />
   <OpeningHours lang={lang} />
 
