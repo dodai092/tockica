@@ -1,0 +1,196 @@
+---
+// One class on the schedule page, laid out like Dunia's mockup (2026-11-11): the instructor's round mark, start time,
+// bold first name with the training name below, a note when few places are left or none, and the action. The mark is
+// the instructor's photo, or their initial on a tint when they have none. It links to the same profile as the name but stays out of the
+// tab order and the accessibility tree, so the name is the one link announced. The data-f fields are what the browser script fills when it clones
+// this row from the feed (ScheduleList.astro). Below md the row is a rail (mark left, action right); from md it stacks
+// inside the day's sheet. With `card` it is the homepage card: always stacked, in its own box (NextClasses.astro).
+import { TINTS, faceTransform, initialOf, tintIndex } from '~/lib/avatar';
+import type { Thumb } from '~/lib/instructor-photo';
+
+interface Props {
+  id: string;
+  /** Start time only. */
+  time: string;
+  /** The weekday, shown as a small label above the time on a card (a card is not inside a day's sheet). */
+  day?: string;
+  instructor: string;
+  /** Small photo (instructor-photo.ts thumbUrls). Without it the mark is the initial. */
+  photo?: Thumb;
+  /** The instructor's profile page. Without it the name is plain text. */
+  instructorHref?: string;
+  /** The row sits on that instructor's own page: the name and initial are plain text, not links to the same page. */
+  plainInstructor?: boolean;
+  name: string;
+  /** "Still 2 free" or "Full", already in the page language. Empty while there are plenty of places. */
+  seatsText: string;
+  /** Few places left: the seats text is highlighted. */
+  scarce: boolean;
+  /** No places: the waiting list is offered instead of Book. */
+  full: boolean;
+  /** Too far ahead to book: the button is inactive and says so. Wins over `full`. */
+  closed?: boolean;
+  href: string;
+  labels: { book: string; waitlist: string; notOpen?: string };
+  /** The homepage card: a box of its own, always stacked. Needs `freeBikes`. */
+  card?: boolean;
+  freeBikes?: number;
+  /** Extra classes on the row, for the card's size in its list. */
+  class?: string;
+}
+
+const {
+  id,
+  time,
+  day,
+  instructor,
+  photo,
+  instructorHref,
+  plainInstructor = false,
+  name,
+  seatsText,
+  scarce,
+  full,
+  closed = false,
+  href,
+  labels,
+  card = false,
+  freeBikes = 0,
+} = Astro.props;
+// A row built in the browser is cloned from an anchor and gets its href later, so only a page that never links
+// (the instructor's own) switches the tag.
+const Who = plainInstructor ? 'span' : 'a';
+const flags = {
+  ...(card ? { 'data-next-class': id, 'data-free-bikes': String(freeBikes) } : { 'data-class-id': id }),
+  ...(full && !closed ? { 'data-full': '' } : {}),
+  ...(closed ? { 'data-closed': '' } : {}),
+  ...(scarce ? { 'data-scarce': '' } : {}),
+};
+---
+
+<li
+  {...flags}
+  class:list={[
+    'sched-row group',
+    card
+      ? 'sched-row--card rounded-(--aw-radius-card) border border-gray-200 bg-white p-3 shadow-xl sm:p-4 dark:border-slate-700 dark:bg-slate-900'
+      : 'border-t border-gray-200 py-3.5 dark:border-slate-700',
+    Astro.props.class,
+  ]}
+>
+  <Who
+    data-f="initial"
+    href={plainInstructor ? undefined : instructorHref}
+    aria-hidden="true"
+    tabindex="-1"
+    class:list={[
+      '[grid-area:photo] relative flex h-14 w-14 flex-none items-center justify-center self-center overflow-hidden rounded-full font-heading text-lg font-bold',
+      photo ? 'bg-accent text-transparent ring-1 ring-white/20' : TINTS[tintIndex(instructor)],
+    ]}
+  >
+    <span data-f="letter">{initialOf(instructor)}</span>
+    {/* Zoomed on the face: the photo is a square cutout with the head in the upper half. */}
+    <img
+      data-f="photo"
+      src={photo?.src}
+      alt={instructor}
+      width="224"
+      height="224"
+      loading="lazy"
+      decoding="async"
+      hidden={!photo}
+      style={photo ? `transform: ${faceTransform(photo.focus)}` : undefined}
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+  </Who>
+  {
+    card && (
+      <p
+        data-f="day"
+        class="[grid-area:day] text-[0.6875rem] font-bold uppercase leading-none tracking-wider text-muted"
+      >
+        {day}
+      </p>
+    )
+  }
+  <p data-f="time" class="[grid-area:time] self-end whitespace-nowrap font-heading text-lg font-bold tabular-nums">
+    {time}
+  </p>
+  <p
+    data-f="seats"
+    class="[grid-area:seats] self-end justify-self-end whitespace-nowrap text-xs text-muted group-data-scarce:font-semibold group-data-scarce:text-primary dark:group-data-scarce:text-red-300"
+  >
+    {seatsText}
+  </p>
+  <p class="[grid-area:who] min-w-0 self-end text-sm font-bold">
+    <Who data-f="instructor" href={plainInstructor ? undefined : instructorHref} class="block truncate hover:underline"
+      >{instructor}</Who
+    >
+  </p>
+  <p data-f="name" class="[grid-area:kind] self-start text-sm text-default">{name}</p>
+  <a
+    href={closed ? undefined : href}
+    aria-disabled={closed ? 'true' : undefined}
+    class:list={[
+      'sched-action [grid-area:action] inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-semibold',
+      card ? 'w-full' : 'min-w-28 md:w-full',
+      closed
+        ? 'cursor-not-allowed border border-(--aw-color-btn) bg-(--aw-color-btn) text-(--aw-color-btn-text) opacity-40'
+        : full
+          ? 'border-2 border-primary bg-white text-primary dark:border-red-300 dark:bg-transparent dark:text-red-300'
+          : 'border border-(--aw-color-btn) bg-(--aw-color-btn) text-(--aw-color-btn-text) transition-colors duration-200 hover:border-(--aw-color-btn-hover) hover:bg-(--aw-color-btn-hover)',
+    ]}
+  >
+    {closed ? labels.notOpen : full ? labels.waitlist : labels.book}
+  </a>
+</li>
+
+<style>
+  /* Rail (below md): mark left, time and name in the middle, note over the action on the right. */
+  .sched-row {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr auto;
+    grid-template-areas: 'photo time seats' 'photo who action' 'photo kind action';
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+    align-items: center;
+  }
+  /* Stacked (from md, and always on the homepage card): time with the note on one line, mark beside the names, action across. */
+  @media (min-width: 768px) {
+    .sched-row {
+      grid-template-columns: 3.5rem 1fr auto;
+      grid-template-areas: 'time time seats' 'photo who who' 'photo kind kind' 'action action action';
+      column-gap: 0.5rem;
+      row-gap: 0.25rem;
+    }
+  }
+  .sched-row.sched-row--card {
+    grid-template-columns: 3.5rem 1fr auto;
+    grid-template-areas: 'day day day' 'time time seats' 'photo who who' 'photo kind kind' 'action action action';
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
+  }
+  .sched-row .sched-action {
+    margin-top: 0.5rem;
+  }
+  @media (max-width: 767.98px) {
+    .sched-row:not(.sched-row--card) .sched-action {
+      margin-top: 0;
+    }
+  }
+  /* Press feedback like the site's buttons (animation-rules 4). Reduced motion keeps the colour change only. */
+  .sched-action {
+    transition: transform 0.35s var(--ease-spring);
+  }
+  .sched-action:not([aria-disabled='true']):active {
+    transform: scale(0.96);
+    transition-duration: 0.08s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sched-action,
+    .sched-action:active {
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

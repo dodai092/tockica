@@ -1,0 +1,300 @@
+---
+import Placeholder from '~/components/client/Placeholder.astro';
+import BikeSheet from '~/components/client/schedule/BikeSheet.astro';
+import ScheduleRow from '~/components/client/schedule/ScheduleRow.astro';
+import { instructors } from '~/data/instructors';
+import { nextClasses } from '~/data/next-classes';
+import { profileHref, slugOf } from '~/lib/instructor-link';
+import { thumbUrls } from '~/lib/instructor-photo';
+import { seatNote, seatState } from '~/lib/seats';
+import { firstFreeBike } from '~/lib/schedule-feed';
+import { isBookable } from '~/lib/schedule-days';
+import { getCopy, pathFor } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+  /** Pull the cards up over the hero photo. Off on pages that have no hero. */
+  overlapHero?: boolean;
+}
+
+const { lang, overlapHero = true } = Astro.props;
+const copy = getCopy(lang).home.nextClasses;
+const seatCopy = getCopy(lang).schedulePage.seats;
+const labels = { book: copy.book, waitlist: copy.waitlist, notOpen: getCopy(lang).schedulePage.notOpen };
+// Cards sit in a sideways scroll row on phones and a grid from sm.
+const size = 'w-[10.5rem] flex-none snap-start sm:w-auto';
+const schedule = pathFor('schedule', lang);
+const profileBase = `${pathFor('instructors', lang)}/`;
+const profileSlugs = instructors.map((i) => i.slug);
+const thumbs = await thumbUrls();
+const dayOf = new Intl.DateTimeFormat(lang, { weekday: 'short', timeZone: 'Europe/Zagreb' });
+const timeOf = new Intl.DateTimeFormat(lang, {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: 'Europe/Zagreb',
+});
+---
+
+<!-- Cards overlap the bottom edge of the hero photo. The heading stays for screen readers. -->
+<section
+  data-section="next-classes"
+  data-lang={lang}
+  data-seat-labels={JSON.stringify(seatCopy)}
+  data-profile-base={profileBase}
+  data-profile-slugs={JSON.stringify(profileSlugs)}
+  data-photos={JSON.stringify(thumbs)}
+  class:list={['relative z-10 mx-auto max-w-7xl px-4 sm:px-6', overlapHero ? '-mt-20 md:-mt-28' : 'mt-10 md:mt-12']}
+>
+  <h2 class="sr-only">{copy.heading}</h2>
+  <ul
+    data-next-rail
+    class="-mx-4 flex scroll-pl-4 snap-x gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4"
+  >
+    {
+      nextClasses.map((c) => {
+        const free = c.capacity - c.takenBikes.length;
+        const st = seatState(free, c.capacity);
+        const bookable = isBookable(c.startsAt);
+        return (
+          <ScheduleRow
+            card
+            id={c.id}
+            freeBikes={c.freeBikes}
+            day={dayOf.format(new Date(c.startsAt))}
+            time={timeOf.format(new Date(c.startsAt))}
+            instructor={c.instructor}
+            photo={thumbs[slugOf(c.instructor)]}
+            instructorHref={profileHref(profileBase, profileSlugs, c.instructor)}
+            name={c.themeName ?? c.name}
+            seatsText={bookable ? seatNote(free, c.capacity, seatCopy, lang) : ''}
+            scarce={st.scarce && bookable}
+            full={firstFreeBike(c) === null}
+            closed={!bookable}
+            href={schedule}
+            labels={labels}
+            class={size}
+          />
+        );
+      })
+    }
+  </ul>
+  {/* Patterns the browser script clones: a class with free bikes (Book) and a full one (waiting list). */}
+  <template data-card="open">
+    <ScheduleRow
+      card
+      id=""
+      freeBikes={1}
+      time=""
+      instructor=""
+      name=""
+      seatsText=""
+      scarce={false}
+      full={false}
+      href={schedule}
+      labels={labels}
+      class={size}
+    />
+  </template>
+  <template data-card="full">
+    <ScheduleRow
+      card
+      id=""
+      freeBikes={0}
+      time=""
+      instructor=""
+      name=""
+      seatsText=""
+      scarce={false}
+      full={true}
+      href={schedule}
+      labels={labels}
+      class={size}
+    />
+  </template>
+  <template data-card="closed">
+    <ScheduleRow
+      card
+      id=""
+      freeBikes={0}
+      time=""
+      instructor=""
+      name=""
+      seatsText=""
+      scarce={false}
+      full={false}
+      closed={true}
+      href={schedule}
+      labels={labels}
+      class={size}
+    />
+  </template>
+  <p class="mt-2">
+    <Placeholder lang={lang} label="next classes are mock data until the booking app endpoint exists" />
+  </p>
+</section>
+{/* Book on a card opens the same bike map as on the schedule page. The classes are handed to it by the script. */}
+<script
+  is:inline
+  type="application/json"
+  data-next-data
+  set:html={JSON.stringify(nextClasses).replace(/</g, '\\u003c')}
+/>
+<BikeSheet lang={lang} />
+
+<style>
+  /* Phones: the cards scroll sideways with no scrollbar, so each end that has more cards fades out. Enhancement only:
+     a mask driven by the row's own scroll position (no duration, no script), so browsers without scroll-driven
+     animations show the plain row. From sm the cards are a grid and nothing scrolls. */
+  @property --rail-fade-start {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+  @property --rail-fade-end {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+  @keyframes rail-fade-start {
+    to {
+      --rail-fade-start: var(--rail-fade);
+    }
+  }
+  @keyframes rail-fade-end {
+    from {
+      --rail-fade-end: var(--rail-fade);
+    }
+  }
+  @media (max-width: 639px) {
+    @supports (animation-timeline: scroll()) {
+      [data-next-rail] {
+        --rail-fade: 2.5rem;
+        mask:
+          linear-gradient(#000, #000) no-clip subtract,
+          linear-gradient(to right, #000, transparent) 0 0 / var(--rail-fade-start) 100% no-repeat no-clip,
+          linear-gradient(to right, transparent, #000) 100% 0 / var(--rail-fade-end) 100% no-repeat no-clip;
+        animation:
+          rail-fade-start linear both,
+          rail-fade-end linear both;
+        animation-timeline: scroll(self inline), scroll(self inline);
+        animation-range:
+          0 var(--rail-fade),
+          calc(100% - var(--rail-fade)) 100%;
+      }
+    }
+  }
+</style>
+
+<script>
+  import { fillRow } from '~/lib/class-row';
+  import { profileHref, slugOf } from '~/lib/instructor-link';
+  import { isBookable } from '~/lib/schedule-days';
+  import { SCHEDULE_FEED_URL, parseSchedule } from '~/lib/schedule-feed';
+  import type { NextClass } from '~/lib/schedule-feed';
+  import type { SeatLabels } from '~/lib/seats';
+
+  // Cards are built from mock data (see the frontmatter), so the page works without the feed. In the browser they
+  // are replaced by the booking app's feed, and refreshed while the tab is visible, so a booked bike shows up as one
+  // fewer free bike. Any failure leaves what is on screen as it is.
+  const POLL_MS = 30_000;
+
+  // The bike map (BikeSheet.astro) listens for these two events, the same ones the schedule list sends: the classes
+  // on screen, and a press on Book. Without the script the buttons stay plain links to the schedule page.
+  const publish = (classes: NextClass[]) =>
+    document.dispatchEvent(new CustomEvent('schedule:update', { detail: classes }));
+
+  const setup = () => {
+    const root = document.querySelector<HTMLElement>('[data-section="next-classes"]');
+    if (!root || root.dataset.sheetBound) return;
+    root.dataset.sheetBound = '';
+    try {
+      publish(JSON.parse(document.querySelector('[data-next-data]')?.textContent ?? '[]') as NextClass[]);
+    } catch {
+      // No classes for the sheet: the links still lead to the schedule.
+    }
+    root.addEventListener('click', (e) => {
+      const ev = e as MouseEvent;
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      const li = (e.target as Element).closest<HTMLElement>('li[data-next-class]');
+      if (!li || !(e.target as Element).closest('a.sched-action')) return;
+      e.preventDefault();
+      if (li.hasAttribute('data-closed')) return;
+      document.dispatchEvent(
+        new CustomEvent('schedule:book', {
+          detail: { classId: li.dataset.nextClass, full: li.hasAttribute('data-full') },
+        })
+      );
+    });
+  };
+
+  const showFeed = async () => {
+    const root = document.querySelector<HTMLElement>('[data-section="next-classes"]');
+    const list = root?.querySelector('ul');
+    const open = root?.querySelector<HTMLTemplateElement>('template[data-card="open"]');
+    const full = root?.querySelector<HTMLTemplateElement>('template[data-card="full"]');
+    const closed = root?.querySelector<HTMLTemplateElement>('template[data-card="closed"]');
+    if (!root || !list || !open || !full || !closed) return;
+    try {
+      const res = await fetch(SCHEDULE_FEED_URL, { headers: { accept: 'application/json' }, cache: 'no-store' });
+      if (!res.ok) return;
+      const feed = parseSchedule(await res.json());
+      if (!feed || !feed.classes.length) return;
+      // Nothing changed since the last answer: leave the cards alone, so focus and scroll position stay put.
+      const signature = JSON.stringify(feed.classes);
+      if (root.dataset.feedSig === signature) return;
+      const dayOf = new Intl.DateTimeFormat(root.dataset.lang, { weekday: 'short', timeZone: 'Europe/Zagreb' });
+      const timeOf = new Intl.DateTimeFormat(root.dataset.lang, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+        timeZone: 'Europe/Zagreb',
+      });
+      const seatLabels = JSON.parse(root.dataset.seatLabels ?? '{}') as SeatLabels;
+      const profileSlugs = JSON.parse(root.dataset.profileSlugs ?? '[]') as string[];
+      const photos = JSON.parse(root.dataset.photos ?? '{}') as Record<
+        string,
+        { src: string; focus: [number, number] }
+      >;
+      const items = feed.classes.map((c) => {
+        const li = (
+          !isBookable(c.startsAt) ? closed : c.freeBikes > 0 ? open : full
+        ).content.firstElementChild!.cloneNode(true) as HTMLElement;
+        li.setAttribute('data-next-class', c.id);
+        li.setAttribute('data-free-bikes', String(c.freeBikes));
+        fillRow(li, c, {
+          day: dayOf.format(new Date(c.startsAt)),
+          time: timeOf.format(new Date(c.startsAt)),
+          locale: root.dataset.lang ?? 'hr',
+          seatLabels,
+          profileHref: (first) => profileHref(root.dataset.profileBase ?? '', profileSlugs, first),
+          photo: (first) => photos[slugOf(first)],
+        });
+        return li;
+      });
+      list.replaceChildren(...items);
+      root.dataset.feedSig = signature;
+      publish(feed.classes);
+      if (feed.source !== 'mock') root.querySelector('[data-todo]')?.remove();
+      root.setAttribute('data-feed-live', feed.source ?? 'app');
+    } catch {
+      // Offline or the feed is down: what is on screen stays.
+    }
+  };
+
+  let timer: number | undefined;
+  const start = () => {
+    window.clearInterval(timer);
+    setup();
+    void showFeed();
+    timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void showFeed();
+    }, POLL_MS);
+  };
+  document.addEventListener('astro:page-load', start);
+  // Back on the tab after a while: do not wait for the next tick.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void showFeed();
+  });
+</script>

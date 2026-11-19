@@ -1,0 +1,81 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import { pathFor } from '../src/i18n/index.ts';
+
+const read = (file) => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+const pages = [
+  { lang: 'hr', file: 'dist/instruktori/index.html' },
+  { lang: 'en', file: 'dist/en/instructors/index.html' },
+];
+const order = ['dunia', 'oliver', 'ivana', 'mirna', 'ena', 'domagoj', 'emma'];
+const firstNames = {
+  dunia: 'Dunia',
+  oliver: 'Oliver',
+  ivana: 'Ivana',
+  mirna: 'Mirna',
+  ena: 'Ena',
+  domagoj: 'Domagoj',
+  emma: 'Emma',
+};
+
+// Lines come straight from the client copy source table, not from the page's own data file.
+async function sourceLines() {
+  const md = await read('docs/copy/source.md');
+  const rows = md.split('\n').filter((l) => /^\| (Dunia|Oliver|Ivana|Mirna|Ena|Domagoj|Emma) /.test(l));
+  assert.equal(rows.length, 7, 'source table must list seven instructors');
+  return Object.fromEntries(
+    rows.map((row) => {
+      const [full, en, hr] = row
+        .split('|')
+        .slice(1, 4)
+        .map((c) => c.trim());
+      return [full.split(' ')[0].toLowerCase(), { en, hr }];
+    })
+  );
+}
+
+function cards(html) {
+  const found = [...html.matchAll(/<li\b[^>]*data-instructor="([^"]+)"[^>]*>([\s\S]*?)<\/li>/g)];
+  return Object.fromEntries(found.map((m) => [m[1], m[2]]));
+}
+
+for (const { lang, file } of pages) {
+  test(`${lang}: seven instructor cards in roster order, first names only`, async () => {
+    const html = await read(file);
+    const found = [...html.matchAll(/data-instructor="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(found, order);
+    const byCard = cards(html);
+    for (const slug of order)
+      assert.match(byCard[slug], new RegExp(`<h2[^>]*>\\s*(?:<a[^>]*>\\s*)?${firstNames[slug]}\\s*(?:</a>\\s*)?</h2>`));
+  });
+
+  test(`${lang}: every instructor's line matches the client copy exactly`, async () => {
+    const src = await sourceLines();
+    const byCard = cards(await read(file));
+    for (const slug of order) {
+      assert.ok(byCard[slug].includes(src[slug][lang]), `${slug} ${lang} line differs from source.md`);
+      assert.ok(!/data-todo=/.test(byCard[slug]), `${slug} must not be a placeholder`);
+    }
+  });
+
+  test(`${lang}: no full instructor name in the page`, async () => {
+    const html = await read(file);
+    for (const name of ['Mando', 'Mauer', 'Zebec', 'Vušić', 'Vusic', 'Vončina', 'Voncina', 'Stepinac', 'Petrak']) {
+      assert.ok(!html.includes(name), `${name} found`);
+    }
+  });
+
+  test(`${lang}: a portrait is the photo with the first name as alt`, async () => {
+    const byCard = cards(await read(file));
+    for (const slug of order) {
+      assert.ok(/data-photo="/.test(byCard[slug]));
+      assert.ok(new RegExp(`<img\\b[^>]*alt="${firstNames[slug]}"`).test(byCard[slug]), `${slug} photo`);
+    }
+  });
+}
+
+test('instructors route points at the built pages', () => {
+  assert.equal(pathFor('instructors', 'hr'), '/instruktori');
+  assert.equal(pathFor('instructors', 'en'), '/en/instructors');
+});

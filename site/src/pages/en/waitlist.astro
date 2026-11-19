@@ -1,0 +1,6 @@
+---
+// The waitlist page is the homepage now, so the old address sends visitors there.
+import { pathFor } from '~/i18n';
+
+return Astro.redirect(pathFor('home', 'en'));
+---

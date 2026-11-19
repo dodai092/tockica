@@ -1,0 +1,60 @@
+---
+// The waitlist page, the homepage until opening (src/data/waitlist.ts): the hero with the offer and form
+// (home/WaitlistHero.astro), the steps, the FAQ, the opening hours and a closing band.
+import { Picture } from 'astro:assets';
+import Button from '~/components/ui/Button.astro';
+import Page from '~/components/client/Page.astro';
+import WaitlistHero from '~/components/client/home/WaitlistHero.astro';
+import HowItWorks from '~/components/client/home/HowItWorks.astro';
+import Faq from '~/components/client/home/Faq.astro';
+import OpeningHours from '~/components/client/home/OpeningHours.astro';
+import SpinBike from '~/components/client/SpinBike.astro';
+import wordsArt from '~/assets/images/hero-words.png';
+import { getCopy } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = getCopy(lang);
+const t = copy.waitlist;
+---
+
+<Page lang={lang} route="home" title={t.title} description={t.description} overlayBar>
+  <WaitlistHero lang={lang} />
+
+  <HowItWorks lang={lang} heading={t.stepsHeading} steps={t.steps} goalLast timeline={t.timeline} />
+  <Faq lang={lang} />
+  <OpeningHours lang={lang} />
+
+  <section class="relative isolate overflow-hidden bg-black text-white">
+    <Picture
+      src={wordsArt}
+      alt=""
+      formats={['avif', 'webp']}
+      widths={[768, 1280, 1600]}
+      sizes="100vw"
+      loading="lazy"
+      class="absolute inset-0 -z-20 h-full w-full origin-[88%_55%] scale-[1.6] md:scale-[1.9] object-cover object-[88%_55%]"
+    />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/70 via-black/20 to-black/0" aria-hidden="true"></div>
+    {/* Desktop: the bike stands in the right half of the closing band, beside the claim. */}
+    <SpinBike
+      variant="slot"
+      fill="rgb(0 0 0)"
+      dim={0.7}
+      class="bottom-0 right-[max(1.5rem,calc(50%_-_38.5rem))] w-[470px]"
+    />
+    <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-36">
+      <p class="max-w-3xl font-heading text-3xl font-extrabold leading-tight tracking-tight text-balance md:text-6xl">
+        {copy.home.about.line}
+      </p>
+      <p class="mt-6 max-w-xl text-lg font-semibold text-white/90 md:text-xl">
+        {`${t.price}, ${t.priceLine.toLowerCase()}. ${t.deadline}`}
+      </p>
+      <Button variant="primary" href="#waitlist-form" text={t.formHeading} class="mt-6 md:mt-8" data-to-form />
+    </div>
+  </section>
+</Page>

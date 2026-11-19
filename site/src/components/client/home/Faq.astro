@@ -1,0 +1,84 @@
+---
+import Placeholder from '~/components/client/Placeholder.astro';
+import { faq } from '~/data/faq';
+import { getCopy } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = getCopy(lang).home.faq;
+---
+
+<section data-section="faq" class="mx-auto max-w-3xl px-4 sm:px-6 py-12 md:py-16">
+  <h2 class="text-3xl font-extrabold text-heading">{copy.heading}</h2>
+  <div class="mt-8 divide-y divide-gray-200 dark:divide-slate-600 border-y border-gray-200 dark:border-slate-600">
+    {
+      faq.map((item, i) => {
+        const q = item.q[lang];
+        const a = item.a[lang];
+        return (
+          <details data-faq-item class="group">
+            <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-md py-4 text-lg font-semibold text-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white [&::-webkit-details-marker]:hidden">
+              <span>{q ?? <Placeholder lang={lang} label={`FAQ question ${i + 1} (Croatian)`} />}</span>
+              <svg
+                class="size-5 shrink-0 text-muted transition-transform duration-[240ms] ease-out group-open:rotate-180 motion-reduce:transition-none"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 8l5 5 5-5" />
+              </svg>
+            </summary>
+            <div class="space-y-3 pb-4 text-default">
+              {a ? (
+                a.split('\n').map((p) => <p>{p}</p>)
+              ) : (
+                <Placeholder
+                  lang={lang}
+                  label={i === 3 ? 'FAQ cancel answer (6-hour rule, Dunia approves)' : `FAQ answer ${i + 1} (Croatian)`}
+                />
+              )}
+            </div>
+          </details>
+        );
+      })
+    }
+  </div>
+</section>
+
+<script>
+  import { collapse, expand, release } from '~/lib/motion.js';
+
+  // The answer opens and closes with the prototype's fold (height, spacing and opacity, 240 ms).
+  // Delegated once, so it keeps working after client-side navigation.
+  document.addEventListener('click', (e) => {
+    const summary = (e.target as HTMLElement)?.closest<HTMLElement>('details[data-faq-item] > summary');
+    if (!summary) return;
+    e.preventDefault();
+    const item = summary.parentElement as HTMLDetailsElement;
+    const body = item.querySelector<HTMLElement>(':scope > div');
+    if (!body) return;
+    if (item.open && !item.dataset.closing) {
+      item.dataset.closing = '1';
+      collapse(body).then(() => {
+        if (!item.dataset.closing) return;
+        delete item.dataset.closing;
+        item.open = false;
+        release(body);
+      });
+    } else {
+      // Opening, or opening again while it is still folding shut.
+      delete item.dataset.closing;
+      release(body);
+      item.open = true;
+      expand(body);
+    }
+  });
+</script>

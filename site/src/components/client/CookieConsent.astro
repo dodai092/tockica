@@ -1,0 +1,104 @@
+---
+// Example EU opt-in consent banner. CLIENT LAYER — copy and adapt (wording, the cookie
+// policy link, styling). Not wired in by default.
+//
+// Prerequisites:
+//   1. src/config.yaml -> analytics.vendors.googleAnalytics.id = "G-XXXXXXXXXX"
+//   2. src/config.yaml -> analytics.vendors.googleAnalytics.requireConsent: true
+//      (core Analytics.astro then defines window.awAnalytics and loads GA only on grant)
+//   3. Render <CookieConsent /> from src/components/client/GlobalEmbeds.astro (the
+//      blessed site-wide client mount point). Do not touch src/layouts/; it is core.
+//
+// window.awAnalytics.status() -> 'granted' | 'denied' | 'unset'
+// window.awAnalytics.grant() / .deny() persist the choice and (grant) load GA live.
+//
+// Točkica: language comes from the URL (GlobalEmbeds has no props). On phones the banner
+// sits above the fixed book bar, except on the schedule page, which has no bar.
+import { bookBarEnabled } from '~/lib/book-bar';
+import { ANALYTICS } from 'astrowind:config';
+import { withBase } from '~/lib/base';
+import { getCopy, pathFor } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+// With no GA id core Analytics never defines window.awAnalytics, so a banner could not
+// remember the choice and there is nothing to consent to. Render it only once an id is set.
+const hasAnalytics = Boolean(ANALYTICS?.vendors?.googleAnalytics?.id);
+const lang: Lang = Astro.url.pathname.startsWith(withBase('/en')) ? 'en' : 'hr';
+const t = getCopy(lang).consent;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const hasBookBar = bookBarEnabled && path !== pathFor('schedule', lang);
+const position = hasBookBar ? 'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-0' : 'bottom-0';
+---
+
+{
+  hasAnalytics && (
+    <div
+      id="cookie-consent"
+      role="dialog"
+      aria-label={t.label}
+      class={`fixed ${position} inset-x-0 z-50 p-4 shadow-lg hidden`}
+      style="background-color: var(--aw-color-bg-page); border-top: 1px solid var(--aw-color-text-muted);"
+    >
+      <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-4">
+        <p class="text-sm flex-1" style="color: var(--aw-color-text-default)">
+          {t.text}{' '}
+          <a href={pathFor('privacy', lang)} class="underline">
+            {t.more}
+          </a>
+          .
+        </p>
+        <div class="flex gap-3 flex-shrink-0">
+          <button
+            id="cookie-decline"
+            type="button"
+            class="rounded-md px-4 py-2 text-sm font-medium border"
+            style="border-color: var(--aw-color-text-muted); color: var(--aw-color-text-default);"
+          >
+            {t.decline}
+          </button>
+          <button
+            id="cookie-accept"
+            type="button"
+            class="rounded-md px-4 py-2 text-sm font-medium text-white"
+            style="background-color: var(--aw-color-primary);"
+          >
+            {t.accept}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<script>
+  import { fadeIn, fadeOut, release } from '~/lib/motion.js';
+
+  const banner = document.getElementById('cookie-consent');
+
+  function currentStatus() {
+    return window.awAnalytics ? window.awAnalytics.status() : 'unset';
+  }
+
+  // Fades out, then hides.
+  const hide = () =>
+    fadeOut(banner).then(() => {
+      banner?.classList.add('hidden');
+      if (banner) release(banner);
+    });
+
+  if (currentStatus() === 'unset') {
+    banner?.classList.remove('hidden');
+    fadeIn(banner);
+    document.getElementById('cookie-accept')?.focus();
+  }
+
+  document.getElementById('cookie-accept')?.addEventListener('click', () => {
+    window.awAnalytics?.grant();
+    hide();
+  });
+
+  document.getElementById('cookie-decline')?.addEventListener('click', () => {
+    window.awAnalytics?.deny();
+    hide();
+  });
+</script>

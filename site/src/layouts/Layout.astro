@@ -1,0 +1,75 @@
+---
+import '~/assets/styles/tailwind.css';
+
+import { Font } from 'astro:assets';
+import type { ComponentProps } from 'astro/types';
+
+import { I18N } from 'astrowind:config';
+
+// Fonts to preload. Client layer: the list is per-client (src/fonts.ts), each entry a
+// cssVariable registered in astro.config.ts `fonts`. Empty list = system-font client,
+// nothing is fetched or preloaded. The cast maps the loose string[] onto the Font
+// component's own cssVariable union; Astro still validates each value at build time.
+import { preloadFonts } from '~/fonts';
+
+import { brand } from '~/brand';
+
+type FontCssVariable = ComponentProps<typeof Font>['cssVariable'];
+
+import CommonMeta from '~/components/common/CommonMeta.astro';
+import Favicons from '~/components/Favicons.astro';
+import CustomStyles from '~/components/CustomStyles.astro';
+import ApplyColorMode from '~/components/common/ApplyColorMode.astro';
+import Metadata from '~/components/common/Metadata.astro';
+import SchemaOrg from '~/components/common/SchemaOrg.astro';
+import SiteVerification from '~/components/common/SiteVerification.astro';
+import Analytics from '~/components/common/Analytics.astro';
+import Intersect from '~/components/common/Intersect.astro';
+import GlobalEmbeds from '~/components/client/GlobalEmbeds.astro';
+
+// Comment the line below to disable View Transitions
+import { ClientRouter } from 'astro:transitions';
+
+import type { MetaData as MetaDataType } from '~/types';
+
+export interface Props {
+  metadata?: MetaDataType;
+}
+
+const { metadata = {} } = Astro.props;
+const { textDirection } = I18N;
+const language = metadata.lang ?? I18N.language;
+---
+
+<!doctype html>
+<html lang={language} dir={textDirection} class="2xl:text-[20px]" data-btn={brand.tokens?.button ?? 'solid'}>
+  <head>
+    <CommonMeta />
+    <Favicons />
+    {
+      preloadFonts.map((font) =>
+        typeof font === 'string' ? (
+          <Font cssVariable={font as FontCssVariable} preload />
+        ) : (
+          <Font cssVariable={font.cssVariable as FontCssVariable} preload={font.preload} />
+        )
+      )
+    }
+    <CustomStyles />
+    <ApplyColorMode />
+    <Metadata {...metadata} />
+    <SchemaOrg />
+    <SiteVerification />
+    <Analytics />
+
+    <!-- Comment the line below to disable View Transitions -->
+    <ClientRouter fallback="swap" />
+  </head>
+
+  <body class="antialiased text-default bg-page tracking-tight">
+    <slot />
+
+    <Intersect />
+    <GlobalEmbeds />
+  </body>
+</html>

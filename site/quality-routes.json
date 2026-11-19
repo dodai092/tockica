@@ -1,0 +1,174 @@
+[
+  {
+    "path": "/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/dunia/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/oliver/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/ivana/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/mirna/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/ena/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/domagoj/",
+    "kind": "public"
+  },
+  {
+    "path": "/instruktori/emma/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/dunia/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/oliver/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/ivana/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/mirna/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/ena/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/domagoj/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/instructors/emma/",
+    "kind": "public"
+  },
+  {
+    "path": "/paketi/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/packs/",
+    "kind": "public"
+  },
+  {
+    "path": "/prvi-put/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/first-time/",
+    "kind": "public"
+  },
+  {
+    "path": "/sculpt-room/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/sculpt-room/",
+    "kind": "public"
+  },
+  {
+    "path": "/hvala/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/thanks/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/raspored/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/schedule/",
+    "kind": "public"
+  },
+  {
+    "path": "/pravilnik/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/uvjeti/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/privatnost/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/rules/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/terms/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/privacy/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/kontakt/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/contact/",
+    "kind": "public"
+  },
+  {
+    "path": "/demo/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/demo/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/demo-app/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/waitlist/",
+    "kind": "public"
+  },
+  {
+    "path": "/en/waitlist/",
+    "kind": "public"
+  },
+  {
+    "path": "/hvala-lista/",
+    "kind": "noindex"
+  },
+  {
+    "path": "/en/waitlist-thanks/",
+    "kind": "noindex"
+  }
+]

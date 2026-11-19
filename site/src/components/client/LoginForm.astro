@@ -1,0 +1,49 @@
+---
+// The login form, shared by the header's login sheet and the bike sheet's login step (ADR 0007). Submit handling is
+// src/lib/login-form.ts, one listener on document. The two links go to the booking app's page, which Netlify proxies
+// under tockicanai.hr (ADR 0005), so ClientRouter must not follow them, and it must not submit the form either (data-astro-reload on both: it
+// listens on document before this page's own handler). method=post keeps a password out of the address bar if the script
+// ever failed. Wording is a placeholder until Dunia approves the texts.
+import { withBase } from '~/lib/base';
+import { getCopy } from '~/i18n';
+import { loginPath } from '~/lib/nav';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = getCopy(lang).login;
+const loginHref = withBase(loginPath(lang));
+const field =
+  'min-h-11 rounded-lg border border-gray-400 bg-white px-3 text-base font-normal text-default dark:border-slate-500 dark:bg-slate-900';
+const todo = 'login pages and /api: proxy to the booking app (netlify.toml, ADR 0005)';
+---
+
+<form
+  method="post"
+  data-astro-reload
+  data-login-form
+  data-error-credentials={t.errors.credentials}
+  data-error-no-account={t.errors.noAccount}
+  data-error-unavailable={t.errors.unavailable}
+  class="mt-4 flex flex-col gap-3"
+>
+  <label class="flex flex-col gap-1 text-sm font-semibold text-heading">
+    {t.email}
+    <input type="email" name="email" required autocomplete="username" data-autofocus class:list={[field]} />
+  </label>
+  <label class="flex flex-col gap-1 text-sm font-semibold text-heading">
+    {t.password}
+    <input type="password" name="password" required autocomplete="current-password" class:list={[field]} />
+  </label>
+  <p data-login-error role="alert" class="text-sm text-(--aw-color-error) empty:hidden"></p>
+  <button type="submit" data-login-submit class="btn-primary w-full disabled:cursor-default disabled:opacity-40">
+    {t.submit}
+  </button>
+  <p class="flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm text-default">
+    <a class="underline" href={loginHref} data-astro-reload data-todo={todo}>{t.forgot}</a>
+    <a class="underline" href={loginHref} data-astro-reload data-todo={todo}>{t.signup}</a>
+  </p>
+</form>
