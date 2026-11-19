@@ -28,7 +28,7 @@ for (const { lang, file, h1 } of pages) {
 
   test(`${lang}: message form follows docs/forms.md`, async () => {
     const html = await read(file);
-    const form = html.match(/<form\b[\s\S]*?<\/form>/)?.[0];
+    const form = html.match(/<form\b[^>]*data-netlify="true"[\s\S]*?<\/form>/)?.[0];
     assert.ok(form, 'no form');
     assert.match(form, /name="contact-message"/);
     assert.match(form, /data-netlify="true"/);

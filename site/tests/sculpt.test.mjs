@@ -48,7 +48,7 @@ for (const { lang, file, thanks } of pages) {
 
   test(`${lang}: inquiry form follows docs/forms.md`, async () => {
     const html = await read(file);
-    const form = html.match(/<form\b[\s\S]*?<\/form>/)?.[0];
+    const form = html.match(/<form\b[^>]*data-netlify="true"[\s\S]*?<\/form>/)?.[0];
     assert.ok(form, 'no form');
     assert.match(form, /name="sculpt-inquiry"/);
     assert.match(form, /data-netlify="true"/);
@@ -77,7 +77,8 @@ for (const { lang, file, thanks } of pages) {
     assert.match(html, noindex);
     assert.match(html, new RegExp(`<html[^>]*\\slang="${lang}"`));
     assert.ok(html.includes(`href="${pathFor('home', lang)}"`));
-    assert.ok(!html.includes('<form'));
+    // The login sheet in the header is a form on every page, so look for a Netlify form.
+    assert.ok(!/<form\b[^>]*data-netlify/.test(html));
   });
 }
 
