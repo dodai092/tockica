@@ -1,8 +1,10 @@
 ---
-// Legal page stub (rules, terms, privacy). Body is a placeholder until Dunia sends the
-// texts (doc item 14). Croatian is the official version, English a translation.
+// Legal page (rules, terms, privacy). The text is in src/data/legal.ts: Croatian is the official version, English a
+// translation. Rules are Dunia's own text, terms and privacy are drafts. Every open fact renders as a Placeholder,
+// so a LAUNCH build fails until each one is answered. The page stays noindex until the lawyer has approved the text.
 import Page from '~/components/client/Page.astro';
 import Placeholder from '~/components/client/Placeholder.astro';
+import { legal } from '~/data/legal';
 import { getCopy } from '~/i18n';
 import type { Lang } from '~/i18n';
 
@@ -14,12 +16,33 @@ interface Props {
 const { lang, route } = Astro.props;
 const copy = getCopy(lang);
 const title = copy.footer[route];
+const blocks = legal[lang][route];
 ---
 
 <Page lang={lang} route={route} title={title} description={copy.legalPage.description} noindex>
   <section class="mx-auto max-w-3xl px-4 sm:px-6 py-16 md:py-24">
     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-heading">{title}</h1>
     <p class="mt-4 text-lg text-default">{copy.legalPage.official}</p>
-    <p class="mt-8"><Placeholder lang={lang} label={`${route} text (doc item 14)`} /></p>
+    <div class="mt-8 space-y-4 text-default">
+      {
+        blocks.map((b) =>
+          'h' in b ? (
+            <h2 class="pt-4 text-2xl font-bold text-heading">{b.h}</h2>
+          ) : 'p' in b ? (
+            <p class="max-w-prose">{b.p}</p>
+          ) : 'ul' in b ? (
+            <ul class="max-w-prose list-disc space-y-2 pl-6">
+              {b.ul.map((li) => (
+                <li>{li}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>
+              <Placeholder lang={lang} label={b.todo} />
+            </p>
+          )
+        )
+      }
+    </div>
   </section>
 </Page>

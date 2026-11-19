@@ -16,13 +16,14 @@ const pages = [
 ];
 
 for (const { lang, file, h1, official } of pages) {
-  test(`${file}: noindex, official-language note, placeholder body`, async () => {
+  test(`${file}: noindex, official-language note, real text with open facts flagged`, async () => {
     const html = await read(file);
     assert.match(html, noindex);
     assert.ok(html.includes(`<html lang="${lang}"`) || html.includes(`lang="${lang}"`));
     assert.match(html, new RegExp(`<h1[^>]*>${h1}</h1>`));
     assert.match(html, official);
-    assert.match(html, /data-todo="[^"]*"/, 'legal body is a placeholder (doc item 14)');
+    assert.ok((html.match(/<li\b/g) ?? []).length >= 8, 'the text is on the page');
+    assert.match(html, /data-todo="[^"]*"/, 'open facts stay flagged until the lawyer and Dunia answer');
   });
 }
 
