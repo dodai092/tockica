@@ -1,6 +1,7 @@
 name: Deploy to GitHub Pages
 
-# A preview of the site at https://<owner>.github.io/<repo>/. The repo's config stays pointed at tockicanai.hr:
+# A preview of the site (site/) at https://<owner>.github.io/<repo>/. The app's /api and /prijava are not part of it,
+# GitHub Pages is static. The repo's config stays pointed at tockicanai.hr:
 # this workflow changes the address and the base path for its own build only, and asks search engines not to
 # index the preview.
 
@@ -26,6 +27,9 @@ jobs:
     env:
       TZ: UTC
       LANG: C.UTF-8
+    defaults:
+      run:
+        working-directory: site
 
     steps:
       - name: Checkout repository
@@ -36,6 +40,7 @@ jobs:
         with:
           node-version: '22.22.3'
           cache: npm
+          cache-dependency-path: site/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -54,7 +59,7 @@ jobs:
       - name: Upload the site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site/dist
 
   deploy:
     name: Deploy
