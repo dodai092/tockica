@@ -57,7 +57,9 @@ for (const slug of slugs) {
       assert.match(html, /<h1[^>]*>\s*[A-Z][a-z]+\s*<\/h1>/);
       assert.ok(html.includes(`href="${twin}"`), 'the language switch points at the twin profile');
       assert.ok(html.includes(`href="${back}">`), 'there is a way back to the list');
-      assert.ok(/data-todo="[^"]*Spotify playlist/.test(html), 'no playlist yet, so a placeholder');
+      if (slug === 'oliver')
+        assert.ok(/data-todo="[^"]*Spotify playlist/.test(html), 'no playlist yet, so a placeholder');
+      else assert.ok(html.includes('data-playlist="'), 'the playlist id is on the page');
     });
   }
 }

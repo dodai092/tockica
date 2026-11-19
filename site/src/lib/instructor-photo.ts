@@ -27,7 +27,7 @@ const FACE: Record<string, Focus> = {
   oliver: [43, 28],
   ivana: [43, 31],
   mirna: [46, 34],
-  ena: [47, 31],
+  ena: [44, 31],
   domagoj: [43, 27],
   emma: [47, 21],
 };

@@ -15,6 +15,7 @@ export type Instructor = {
 export const instructors: Instructor[] = [
   {
     slug: 'dunia',
+    playlist: '3xn6F7PHexXhjJOm9DKYLN',
     first: 'Dunia',
     full: 'Dunia Mando',
     line: {
@@ -33,6 +34,7 @@ export const instructors: Instructor[] = [
   },
   {
     slug: 'ivana',
+    playlist: '1pWoC8FgkMj3Rj2B3PAkCZ',
     first: 'Ivana',
     full: 'Ivana Mauer',
     line: {
@@ -42,6 +44,7 @@ export const instructors: Instructor[] = [
   },
   {
     slug: 'mirna',
+    playlist: '5e8AaNH76DH2jiONYTNQyE',
     first: 'Mirna',
     full: 'Mirna Zebec',
     line: {
@@ -51,6 +54,7 @@ export const instructors: Instructor[] = [
   },
   {
     slug: 'ena',
+    playlist: '2E01usHMXxp4RRNpcFP6wj',
     first: 'Ena',
     full: 'Ena Vušić',
     line: {
@@ -60,6 +64,7 @@ export const instructors: Instructor[] = [
   },
   {
     slug: 'domagoj',
+    playlist: '1yWKnKeLzeBqK8ox0g7ApW',
     first: 'Domagoj',
     full: 'Domagoj Vončina',
     line: {
@@ -69,6 +74,7 @@ export const instructors: Instructor[] = [
   },
   {
     slug: 'emma',
+    playlist: '1ZE1Pj26u5yCeg4dvN4DyI',
     first: 'Emma',
     full: 'Emma Stepinac',
     line: {

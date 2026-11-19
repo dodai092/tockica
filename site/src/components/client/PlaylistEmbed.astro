@@ -1,6 +1,7 @@
 ---
-// An instructor's Spotify playlist. Nothing is requested from Spotify until the visitor presses the button, so the
-// page sets no third-party cookies by itself. Without a playlist id it is a Placeholder.
+// An instructor's Spotify playlist, loaded with the page (Antun, 2026-11-19: no click first). Spotify's own player,
+// so it sets Spotify cookies on load: the privacy page has to name Spotify. Without a playlist id it is a Placeholder.
+// The embed lays itself out by its width, so the box is capped on desktop and full width on a phone.
 import Placeholder from '~/components/client/Placeholder.astro';
 import { getCopy } from '~/i18n';
 import type { Lang } from '~/i18n';
@@ -17,11 +18,16 @@ const t = getCopy(lang).instructorPage;
 
 {
   playlist ? (
-    <div data-playlist={playlist} data-title={`${t.playlist}: ${first}`}>
-      <button type="button" class="btn btn-secondary" data-playlist-load>
-        {t.loadPlaylist}
-      </button>
-      <p class="mt-2 text-sm text-muted">{t.spotifyNote}</p>
+    <div data-playlist={playlist} class="w-full max-w-xl">
+      <iframe
+        src={`https://open.spotify.com/embed/playlist/${encodeURIComponent(playlist)}`}
+        title={`${t.playlist}: ${first}`}
+        width="100%"
+        height="352"
+        loading="lazy"
+        allow="encrypted-media"
+        class="block rounded-xl border-0"
+      />
       <noscript>
         <a class="font-semibold text-link underline" href={`https://open.spotify.com/playlist/${playlist}`}>
           Spotify
@@ -32,20 +38,3 @@ const t = getCopy(lang).instructorPage;
     <Placeholder lang={lang} label={`${first} Spotify playlist id (Dunia doc item 1)`} />
   )
 }
-
-<script>
-  document.addEventListener('click', (e) => {
-    const button = (e.target as Element).closest('[data-playlist-load]');
-    const box = button?.closest<HTMLElement>('[data-playlist]');
-    if (!box?.dataset.playlist) return;
-    const frame = document.createElement('iframe');
-    frame.src = `https://open.spotify.com/embed/playlist/${encodeURIComponent(box.dataset.playlist)}`;
-    frame.title = box.dataset.title ?? 'Spotify';
-    frame.width = '100%';
-    frame.height = '352';
-    frame.loading = 'lazy';
-    frame.allow = 'encrypted-media';
-    frame.className = 'rounded-xl border-0';
-    box.replaceChildren(frame);
-  });
-</script>
