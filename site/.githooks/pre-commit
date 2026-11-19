@@ -1,24 +1,31 @@
 #!/bin/sh
 # Fast pre-commit gate. Full lint + Lighthouse + link check run in CI.
 # Bypass with: git commit --no-verify
+#
+# This repo holds the site (site/), the app (app/), the rules code (prototype/) and the root config. Git runs this hook
+# from the repo root and lists staged paths relative to it, so every site path below starts with site/. A commit that
+# stages nothing under site/ is not this hook's business and passes at once.
+if ! git diff --cached --name-only --diff-filter=ACMRD | grep -q '^site/'; then
+  exit 0
+fi
 
 # Client-repo core guard: in a client site (no .template-repo marker), block commits
 # that touch template core. See CLAUDE.md "Hard rules".
-if [ ! -f .template-repo ]; then
-  core=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(src/layouts/|src/utils/|src/components/(ui|common|blog|widgets)/|vendor/|src/components/(Logo|Favicons|CustomStyles)\.astro$)') || true
+if [ ! -f site/.template-repo ]; then
+  core=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^site/(src/layouts/|src/utils/|src/components/(ui|common|blog|widgets)/|vendor/|src/components/(Logo|Favicons|CustomStyles)\.astro$)') || true
 
   # astro.config.ts is mostly core, but SETUP.md B1c has every custom-typeface client
   # (the common case, not the exception) edit its `fonts:` array. A blanket block on the
   # whole file fights that documented, sanctioned step. Allow a staged astro.config.ts
   # change only if everything OUTSIDE the `fonts: [ ... ],` block is untouched; anything
   # else in the file (integrations, adapter, image config, ...) still blocks.
-  if git diff --cached --name-only --diff-filter=ACMR | grep -qx 'astro.config.ts'; then
+  if git diff --cached --name-only --diff-filter=ACMR | grep -qx 'site/astro.config.ts'; then
     strip_fonts() {
       awk '/^  fonts: \[$/ { skip = 1; next } skip && /^  \],$/ { skip = 0; next } skip { next } { print }'
     }
-    if git cat-file -e HEAD:astro.config.ts 2>/dev/null; then
-      old=$(git show HEAD:astro.config.ts | strip_fonts)
-      new=$(git show :astro.config.ts | strip_fonts)
+    if git cat-file -e HEAD:site/astro.config.ts 2>/dev/null; then
+      old=$(git show HEAD:site/astro.config.ts | strip_fonts)
+      new=$(git show :site/astro.config.ts | strip_fonts)
     else
       old=""
       new="x" # new file: nothing to compare against, always flag
@@ -26,9 +33,9 @@ if [ ! -f .template-repo ]; then
     if [ "$old" != "$new" ]; then
       if [ -n "$core" ]; then
         core="$core
-astro.config.ts"
+site/astro.config.ts"
       else
-        core="astro.config.ts"
+        core="site/astro.config.ts"
       fi
     fi
   fi
@@ -44,4 +51,4 @@ astro.config.ts"
   fi
 fi
 
-npm run check:astro && npm run check:prettier
+cd site && npm run check:astro && npm run check:prettier
