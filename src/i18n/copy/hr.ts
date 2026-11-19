@@ -47,7 +47,7 @@ export const hr: Copy = {
         { title: 'Odaberi bicikl', text: 'Odaberi gdje želiš sjediti na karti.' },
         {
           title: 'Prijavi se i plati',
-          text: 'Tek kod potvrde, e-mailom bez lozinke. Intro: 1 trening 10 EUR, 3 treninga 30 EUR.',
+          text: 'Tek kod potvrde, e-mailom i lozinkom. Intro: 1 trening 10 EUR, 3 treninga 30 EUR.',
         },
       ],
     },

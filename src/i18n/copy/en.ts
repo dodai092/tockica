@@ -48,7 +48,7 @@ export const en: Copy = {
         { title: 'Choose your bike', text: 'Select where you would like to sit on the map.' },
         {
           title: 'Log in and pay',
-          text: 'Only when you confirm, by e-mail with no password. Intro: 1 class 10 EUR, 3 classes 30 EUR.',
+          text: 'Only when you confirm, with your email and password. Intro: 1 class 10 EUR, 3 classes 30 EUR.',
         },
       ],
     },
