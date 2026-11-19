@@ -16,3 +16,6 @@ dist/
 
 # Tool caches with machine paths
 .impeccable/hook.cache.json
+
+# docs/ is kept out of this public repo for now (hosting costs, launch accounts, waiver draft, security notes).
+/docs/
