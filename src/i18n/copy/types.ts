@@ -10,6 +10,8 @@ export type Copy = {
     sculpt: string;
     contact: string;
     login: string;
+    /** Header label once this browser is signed in. */
+    account: string;
   };
   cta: {
     book: string;
@@ -149,6 +151,22 @@ export type Copy = {
       scarce: { one: string; few: string; other: string };
     };
   };
+  /** The login form and the header login sheet (ADR 0007). Placeholder wording until Dunia approves the texts. */
+  login: {
+    title: string;
+    intro: string;
+    email: string;
+    password: string;
+    submit: string;
+    forgot: string;
+    signup: string;
+    backToBikes: string;
+    errors: { credentials: string; noAccount: string; unavailable: string };
+    /** {name} is the signed-in person's first and last name. */
+    signedInAs: string;
+    logout: string;
+    accountTitle: string;
+  };
   bikeSheet: {
     title: string;
     close: string;
@@ -164,9 +182,6 @@ export type Copy = {
     /** Shown when the picked bike was booked by someone else meanwhile, {n} is the number. */
     taken_now: string;
     loginTitle: string;
-    loginIntro: string;
-    email: string;
-    sendCode: string;
     soonTitle: string;
     soonText: string;
     /** Small note on the bike map while the schedule is mock data. */

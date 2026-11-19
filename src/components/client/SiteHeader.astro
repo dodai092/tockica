@@ -2,12 +2,13 @@
 // Client header. Structure copied from widgets/Header.astro (parts bin, never edited):
 // the <aw-header> script below drives the mobile menu and sticky state.
 import Logo from '~/components/client/Logo.astro';
+import LoginSheet from '~/components/client/LoginSheet.astro';
 import ToggleTheme from '~/components/client/ThemeToggle.astro';
 import ToggleMenu from '~/components/common/ToggleMenu.astro';
 import Button from '~/components/ui/Button.astro';
 import { sculpt } from '~/data/sculpt';
 import { withBase } from '~/lib/base';
-import { headerRoutes, navPath } from '~/lib/nav';
+import { headerRoutes, loginPath, navPath } from '~/lib/nav';
 import { waitlistOnHome } from '~/data/waitlist';
 import { getCopy, otherLang, pathFor } from '~/i18n';
 import type { Lang, RouteKey } from '~/i18n';
@@ -25,6 +26,7 @@ export interface Props {
 const { lang, route, twin, minimal = false, pageScroll = false } = Astro.props;
 const copy = getCopy(lang);
 const other = otherLang(lang);
+const loginHref = withBase(loginPath(lang));
 const currentPath = Astro.url.pathname.replace(/(.)\/$/, '$1');
 
 const links = headerRoutes(sculpt.visible, waitlistOnHome).map((key) => ({
@@ -105,11 +107,12 @@ const linkClass = 'hover:text-link dark:hover:text-white px-4 py-3 flex items-ce
                   ))}
                   {/* Phones: Prijava is the last menu item. From the full bar it is the button next to Book (below). */}
                   <li class="bar:hidden mt-2 border-t border-gray-200 pt-3 dark:border-slate-700">
-                    {/* TODO(client): the login target is the booking app, proxied under tockicanai.hr (ADR 0005). */}
+                    {/* Opens the login sheet. The href is the booking app's page (proxied under tockicanai.hr, ADR 0005), the fallback without JavaScript. data-astro-reload keeps ClientRouter from following the link before the sheet's handler runs. */}
                     <a
                       class="btn-secondary flex w-full justify-center"
-                      href="#"
+                      href={loginHref}
                       data-login
+                      data-astro-reload
                       data-todo="Prijava link (booking app proxy)"
                     >
                       {copy.nav.login}
@@ -120,8 +123,9 @@ const linkClass = 'hover:text-link dark:hover:text-white px-4 py-3 flex items-ce
               <div class="hidden bar:flex items-center gap-3 bar:order-4 bar:ml-3" data-menu-extras>
                 <a
                   class="btn-secondary py-2.5 px-5 text-sm font-semibold shadow-none w-auto"
-                  href="#"
+                  href={loginHref}
                   data-login
+                  data-astro-reload
                   data-todo="Prijava link (booking app proxy)"
                 >
                   {copy.nav.login}
@@ -154,6 +158,7 @@ const linkClass = 'hover:text-link dark:hover:text-white px-4 py-3 flex items-ce
       )
     }
   </header>
+  {!minimal && <LoginSheet lang={lang} />}
 </aw-header>
 
 <style>

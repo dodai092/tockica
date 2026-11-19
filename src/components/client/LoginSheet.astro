@@ -1,0 +1,130 @@
+---
+// The header's login sheet (ADR 0007). One native <dialog>, opened by any [data-login] link or button: a bottom sheet
+// below sm, a centred card from sm, the same as the bike map (Opening, closing and drag-to-dismiss are the prototype's
+// sheet.js). The link keeps a real href (the booking app's page), so it still works without JavaScript. Signed in, the
+// sheet shows who is signed in and a log out button.
+import { Icon } from 'astro-icon/components';
+import LoginForm from '~/components/client/LoginForm.astro';
+import { getCopy } from '~/i18n';
+import type { Lang } from '~/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = getCopy(lang);
+const t = copy.login;
+const view = 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4';
+---
+
+<dialog
+  data-login-sheet
+  data-label-login={copy.nav.login}
+  data-label-account={copy.nav.account}
+  data-title-login={t.title}
+  data-title-account={t.accountTitle}
+  data-signed-in-as={t.signedInAs}
+  data-error-unavailable={t.errors.unavailable}
+  aria-labelledby="login-sheet-title"
+  class="m-auto max-h-[85dvh] w-[min(100%,32.5rem)] max-w-[100vw] overflow-hidden overscroll-contain rounded-[1.25rem] border-0 bg-white p-0 text-default shadow-2xl backdrop:bg-black/40 backdrop:backdrop-blur-[6px] open:flex open:flex-col max-sm:m-0 max-sm:mt-auto max-sm:max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] max-sm:w-full max-sm:rounded-b-none dark:bg-slate-800"
+>
+  <div
+    data-sheet-head
+    class="sheet-head relative flex flex-none items-start justify-between gap-3 border-b border-gray-200 px-4 pb-3 pt-4 dark:border-slate-600 max-sm:pt-5"
+  >
+    <h2 id="login-sheet-title" data-sheet-title class="min-w-0 font-heading text-lg font-bold text-heading">
+      {t.title}
+    </h2>
+    <button
+      type="button"
+      data-sheet-close
+      aria-label={copy.bikeSheet.close}
+      class="-mr-1 -mt-1 inline-flex h-11 w-11 flex-none items-center justify-center rounded-full text-heading transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+    >
+      <Icon name="tabler:x" class="h-5 w-5" />
+    </button>
+  </div>
+
+  <div data-login-view="form" class={view}>
+    <p class="text-sm text-default">{t.intro}</p>
+    <LoginForm lang={lang} />
+  </div>
+
+  <div data-login-view="account" hidden class={view}>
+    <p data-signed-in-text class="font-semibold text-heading"></p>
+    <p data-logout-error role="alert" class="mt-2 text-sm text-(--aw-color-error) empty:hidden"></p>
+    <button type="button" data-logout class="btn-secondary mt-4 w-full">{t.logout}</button>
+  </div>
+</dialog>
+
+<style is:global>
+  /* Page behind a modal sheet must not scroll (iOS chains scroll to it). The gutter stays so desktop does not shift. */
+  html:has(dialog[data-login-sheet][open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+  }
+</style>
+
+<script>
+  import { bindLoginForms } from '~/lib/login-form';
+  import { currentUser, onLoginChange, restore, signOut } from '~/lib/login-state';
+  import type { Me } from '~/lib/login';
+  import { bindSheet, closeSheet, openSheet } from '~/lib/sheet.js';
+
+  // The listeners sit on document, which ClientRouter keeps, and the dialog is looked up when needed because a
+  // navigation replaces it.
+  const sheetEl = () => document.querySelector<HTMLDialogElement>('dialog[data-login-sheet]');
+  const bound = new WeakSet<HTMLElement>();
+
+  function show(sheet: HTMLElement, user: Me | null) {
+    sheet.querySelector<HTMLElement>('[data-login-view="form"]')!.hidden = user !== null;
+    sheet.querySelector<HTMLElement>('[data-login-view="account"]')!.hidden = user === null;
+    sheet.querySelector('[data-sheet-title]')!.textContent =
+      (user ? sheet.dataset.titleAccount : sheet.dataset.titleLogin) ?? '';
+    sheet.querySelector('[data-signed-in-text]')!.textContent = (sheet.dataset.signedInAs ?? '').replace(
+      '{name}',
+      user ? `${user.firstName} ${user.lastName}` : ''
+    );
+    sheet.querySelector('[data-logout-error]')!.textContent = '';
+    sheet.querySelector('[data-login-error]')!.textContent = '';
+  }
+
+  function bind(sheet: HTMLDialogElement) {
+    if (bound.has(sheet)) return;
+    bound.add(sheet);
+    bindSheet(sheet);
+    sheet.querySelector('[data-sheet-close]')!.addEventListener('click', () => void closeSheet(sheet));
+    sheet.querySelector('[data-logout]')!.addEventListener('click', async () => {
+      // A confirmed logout changes the state, which closes the sheet. Otherwise the person stays signed in and sees why.
+      if (!(await signOut()))
+        sheet.querySelector('[data-logout-error]')!.textContent = sheet.dataset.errorUnavailable ?? '';
+    });
+  }
+
+  function open() {
+    const sheet = sheetEl();
+    if (!sheet || sheet.open) return;
+    bind(sheet);
+    show(sheet, currentUser());
+    openSheet(sheet);
+    sheet.querySelector<HTMLElement>('[data-login-view]:not([hidden]) [data-autofocus]')?.focus();
+  }
+
+  bindLoginForms();
+  document.addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('[data-login]')) return;
+    e.preventDefault();
+    open();
+  });
+
+  // Every change (a login, a logout, or the flag being found stale) updates the header label, and ends the sheet's job.
+  onLoginChange((user) => {
+    const sheet = sheetEl();
+    if (!sheet) return;
+    const label = user ? sheet.dataset.labelAccount : sheet.dataset.labelLogin;
+    for (const el of document.querySelectorAll('[data-login]')) el.textContent = label ?? '';
+    if (sheet.open) void closeSheet(sheet);
+  });
+  void restore();
+</script>

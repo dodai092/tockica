@@ -20,3 +20,6 @@ export const footerRoutes = (sculptVisible: boolean, waitlistVisible = true): Na
 
 /** The waitlist page is the homepage while it stands in for it, so its link is the home path. */
 export const navPath = (key: NavKey, lang: Lang): string => pathFor(key === 'waitlist' ? 'home' : key, lang);
+
+/** The booking app's login page (signup, password reset), which Netlify proxies under the site (netlify.toml). */
+export const loginPath = (lang: Lang): string => (lang === 'en' ? '/en/prijava' : '/prijava');

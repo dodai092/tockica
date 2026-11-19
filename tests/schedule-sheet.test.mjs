@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test, { after, before } from 'node:test';
 import { chromium } from 'playwright';
+import { fakeBookingApp, ME, PASSWORD } from './fake-booking-app.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const PORT = 4326;
@@ -56,6 +57,7 @@ async function open({ width = 390, height = 900, path = '/raspored', reduced = f
     const res = await route.fetch();
     return route.fulfill({ json: current(await res.json()) });
   });
+  await fakeBookingApp(page); // the login step now calls the booking app
   await page.goto(`${origin}${path}`);
   await page.waitForSelector('[data-schedule]');
   return { page, errors, setEdit: (fn) => (current = fn) };
@@ -309,7 +311,7 @@ test('English page: the sheet speaks English', async () => {
   await page.close();
 });
 
-// Task 4: login placeholder, "opens soon" notice, kept choice.
+// Task 4: the login step (ADR 0007), "opens soon" notice, kept choice.
 const KEY = 'tockica.choice';
 const step = (page, name) => sheet(page).locator(`[data-step="${name}"]`);
 const stored = (page) => page.evaluate((k) => sessionStorage.getItem(k), KEY);
@@ -329,8 +331,8 @@ async function pickAndContinue(page) {
 }
 
 const words = {
-  '/raspored': { send: 'Pošalji kod', soon: 'uskoro', waitlist: 'Lista čekanja', bike: 'Bicikl' },
-  '/en/schedule': { send: 'Send code', soon: 'soon', waitlist: 'Waiting list', bike: 'Bike' },
+  '/raspored': { submit: 'Prijavi me', soon: 'uskoro', waitlist: 'Lista čekanja', bike: 'Bicikl' },
+  '/en/schedule': { submit: 'Log in', soon: 'soon', waitlist: 'Waiting list', bike: 'Bike' },
 };
 
 for (const width of [390, 1280]) {
@@ -342,26 +344,31 @@ for (const width of [390, 1280]) {
       await step(page, 'login').waitFor({ state: 'visible' });
       assert.ok(await step(page, 'map').isHidden(), 'the map is gone');
       assert.ok((await step(page, 'login').innerText()).includes(String(n)), 'login summary names the bike');
-      assert.equal(await step(page, 'login').locator('[data-send-code]').innerText(), w.send);
-      assert.ok(await step(page, 'login').locator('[data-todo]').count(), 'login is marked as a placeholder');
-      await step(page, 'login').locator('[data-email]').fill('visitor@example.com');
-      await step(page, 'login').locator('[data-send-code]').click();
+      assert.equal(await step(page, 'login').locator('[data-login-submit]').innerText(), w.submit);
+      assert.equal(
+        await step(page, 'login').locator('input[type="password"]').count(),
+        1,
+        'the login step has the real form'
+      );
+      await step(page, 'login').locator('input[name="email"]').fill(ME.email);
+      await step(page, 'login').locator('input[name="password"]').fill(PASSWORD);
+      await step(page, 'login').locator('[data-login-submit]').click();
       await step(page, 'soon').waitFor({ state: 'visible' });
       assert.ok(await step(page, 'login').isHidden());
       const soon = await step(page, 'soon').innerText();
       assert.ok(soon.toLowerCase().includes(w.soon), 'the notice says booking opens soon');
       assert.ok(soon.includes(String(n)), 'the notice keeps the bike');
       assert.ok(await step(page, 'soon').locator('[data-todo]').count(), 'the notice is marked as a placeholder');
-      assert.ok(!(await stored(page))?.includes('visitor@example.com'), 'the email is never stored');
+      assert.ok(!(await stored(page))?.includes(ME.email), 'the email is never stored');
+      assert.ok(!(await stored(page))?.includes(PASSWORD), 'the password is never stored');
       // Change bike goes back to the map with the pick still on.
       await step(page, 'soon').locator('[data-change-bike]').click();
       await step(page, 'map').waitFor({ state: 'visible' });
       assert.equal(await bike(page, n).getAttribute('aria-pressed'), 'true');
       await sheet(page).locator('[data-continue]').click();
-      await step(page, 'login').waitFor({ state: 'visible' });
-      await step(page, 'login').locator('[data-email]').fill('visitor@example.com');
-      await step(page, 'login').locator('[data-send-code]').click();
+      // Signed in now, so Continue skips the login step.
       await step(page, 'soon').waitFor({ state: 'visible' });
+      assert.ok(await step(page, 'login').isHidden());
       await step(page, 'soon').locator('[data-back-to-schedule]').click();
       await closed(page);
       assert.deepEqual(errors, []);
@@ -489,7 +496,7 @@ test('switching language keeps the choice, and the bar and sheet follow the page
   assert.equal(await stored(page), raw, 'the stored value is untouched');
   await pending(page).locator('[data-pending-continue]').click();
   await step(page, 'login').waitFor({ state: 'visible' });
-  assert.equal(await step(page, 'login').locator('[data-send-code]').innerText(), 'Send code');
+  assert.equal(await step(page, 'login').locator('[data-login-submit]').innerText(), 'Log in');
   assert.ok(id);
   await page.close();
 });

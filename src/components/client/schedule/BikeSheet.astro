@@ -2,11 +2,13 @@
 // The bike map dialog (ADR 0006: a visitor picks a class and bike before logging in). One native <dialog>, opened by
 // the script below when the schedule list reports a press on Book (`schedule:book`). It follows the latest classes
 // from `schedule:update`, so a bike that gets taken while it is open is dropped from the pick. Bottom sheet below sm,
-// centred card from sm. Three steps: the map, a placeholder login, and a placeholder "booking opens soon" notice.
+// centred card from sm. Three steps: the map, the real login (ADR 0007, skipped when already signed in), and a placeholder
+// "booking opens soon" notice.
 // The pick is kept in sessionStorage (class id, start time, bike) so it survives the login step and a reload, and
 // the "your pick" bar on the page (ScheduleList.astro) offers it again. Opening, closing and the drag-to-dismiss are
 // the prototype's sheet.js.
 import { Icon } from 'astro-icon/components';
+import LoginForm from '~/components/client/LoginForm.astro';
 import Placeholder from '~/components/client/Placeholder.astro';
 import { BIKE_COUNT, bikePosition } from '~/lib/bike-map';
 import { getCopy } from '~/i18n';
@@ -18,6 +20,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = getCopy(lang).bikeSheet;
+const login = getCopy(lang).login;
 const locale = lang === 'hr' ? 'hr-HR' : 'en-GB';
 // DOM order is the reading order of the map (row by row, left to right), so Tab follows what the eye sees.
 const bikes = Array.from({ length: BIKE_COUNT }, (_, i) => i + 1).sort((a, b) => {
@@ -134,22 +137,9 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
     class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4"
   >
     <p data-summary class="font-semibold text-heading"></p>
-    <p class="mt-1 text-sm text-default">{t.loginIntro}</p>
-    <form data-login-form class="mt-4 flex flex-col gap-3">
-      <label class="flex flex-col gap-1 text-sm font-semibold text-heading">
-        {t.email}
-        <input
-          type="email"
-          required
-          autocomplete="email"
-          data-email
-          data-autofocus
-          class="min-h-11 rounded-lg border border-gray-400 bg-white px-3 text-base font-normal text-default dark:border-slate-500 dark:bg-slate-900"
-        />
-      </label>
-      <button type="submit" data-send-code class="btn-primary w-full">{t.sendCode}</button>
-    </form>
-    <p class="mt-3"><Placeholder lang={lang} label="login is a placeholder until the booking app sign-in exists" /></p>
+    <p class="mt-1 text-sm text-default">{login.intro}</p>
+    <LoginForm lang={lang} />
+    <button type="button" data-back-to-map class="btn-secondary mt-3 w-full">{login.backToBikes}</button>
   </div>
 
   <div
@@ -181,6 +171,8 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
 
 <script>
   import { clearChoice, loadChoice, saveChoice } from '~/lib/booking-choice';
+  import { bindLoginForms } from '~/lib/login-form';
+  import { currentUser, onLoginChange, restore } from '~/lib/login-state';
   import { STUDIO_ZONE } from '~/lib/schedule-days';
   import type { NextClass } from '~/lib/schedule-feed';
   import { fadeIn, fadeOut, pop, release } from '~/lib/motion.js';
@@ -255,6 +247,8 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
   function summarise(sheet: HTMLElement) {
     const text = picked === null ? sheet.dataset.waitlistText : fill(sheet.dataset.bikeText, picked);
     for (const el of sheet.querySelectorAll('[data-summary]')) el.textContent = text ?? '';
+    // The waiting list has no bike map to go back to.
+    for (const el of sheet.querySelectorAll<HTMLElement>('[data-back-to-map]')) el.hidden = picked === null;
   }
 
   // Shows one step. Without `animate` (when the sheet opens) it just switches. Otherwise the old step fades out and
@@ -300,13 +294,9 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
       if (!c || picked === null) return;
       saveChoice({ classId: c.id, startsAt: c.startsAt, bike: picked });
       refreshPending();
-      void show(sheet, 'login', true);
+      void show(sheet, currentUser() ? 'soon' : 'login', true);
     });
-    // A placeholder: no code is sent, it only moves on to the notice.
-    sheet.querySelector('[data-login-form]')!.addEventListener('submit', (e) => {
-      e.preventDefault();
-      void show(sheet, 'soon', true);
-    });
+    sheet.querySelector('[data-back-to-map]')!.addEventListener('click', () => void show(sheet, 'map', true));
     sheet.querySelector('[data-change-bike]')!.addEventListener('click', () => void show(sheet, 'map', true));
     sheet.querySelector('[data-back-to-schedule]')!.addEventListener('click', () => void closeSheet(sheet));
     // Back to where the visitor pressed Book, also when a feed refresh rebuilt that row meanwhile.
@@ -333,9 +323,12 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
     const meta = `${when(sheet.dataset.locale, c)} \u00b7 ${c.instructor} \u00b7 ${c.themeName ?? c.name}`;
     sheet.querySelector('[data-sheet-meta]')!.textContent = meta;
     sheet.querySelector('[data-sheet-instructor]')!.textContent = c.instructor;
-    sheet.querySelector<HTMLInputElement>('[data-email]')!.value = '';
+    sheet.querySelector<HTMLFormElement>('[data-login-form]')!.reset();
+    sheet.querySelector('[data-login-error]')!.textContent = '';
     sync(sheet); // drops a kept bike that is taken now, and says so
-    void show(sheet, step === 'login' && bike !== null && picked === null ? 'map' : step, false);
+    // Already signed in: the login step is skipped.
+    const target = step === 'login' && currentUser() ? 'soon' : step;
+    void show(sheet, step === 'login' && bike !== null && picked === null ? 'map' : target, false);
     openSheet(sheet);
   }
 
@@ -366,6 +359,15 @@ const swatch = 'inline-block h-3.5 w-3.5 rounded border';
     bar.hidden = false;
     if (wasHidden) void fadeIn(bar, -6, 200);
   }
+
+  // A login made in this sheet's login step moves on to the notice. A change while the step is not showing does nothing.
+  onLoginChange((user) => {
+    const sheet = sheetEl();
+    if (user && sheet?.open && !sheet.querySelector<HTMLElement>('[data-step="login"]')!.hidden)
+      void show(sheet, 'soon', true);
+  });
+  bindLoginForms();
+  void restore();
 
   document.addEventListener('schedule:update', (e) => {
     classes = (e as CustomEvent<NextClass[]>).detail;
