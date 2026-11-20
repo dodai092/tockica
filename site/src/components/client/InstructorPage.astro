@@ -1,5 +1,5 @@
 ---
-// One instructor: portrait, line, bio, what they teach, their Spotify playlist and their next classes. Bio, playlist
+// One instructor: portrait, line, bio, what they teach, their next classes and their Spotify playlist. Bio, playlist
 // and portrait are Placeholders until Dunia sends them (a portrait is a file in src/assets/images/instructors). The classes come from the mock schedule, like the rest of the
 // site until the booking app's feed exists.
 import Page from '~/components/client/Page.astro';
@@ -81,11 +81,6 @@ const twin = { hr: instructorPath(slug, 'hr'), en: instructorPath(slug, 'en') };
       </InstructorHero>
     </div>
 
-    <h2 class="mt-12 text-2xl font-bold text-heading">{t.playlist}</h2>
-    <div class="mt-4">
-      <PlaylistEmbed lang={lang} first={i.first} playlist={i.playlist ?? null} />
-    </div>
-
     <h2 class="mt-12 text-2xl font-bold text-heading">{t.nextClasses}</h2>
     <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {
@@ -125,6 +120,11 @@ const twin = { hr: instructorPath(slug, 'hr'), en: instructorPath(slug, 'en') };
       data-instructor-classes
       set:html={JSON.stringify(upcoming).replace(/</g, '\\u003c')}
     />
+    <h2 class="mt-12 text-2xl font-bold text-heading">{t.playlist}</h2>
+    <div class="mt-4">
+      <PlaylistEmbed lang={lang} first={i.first} playlist={i.playlist ?? null} />
+    </div>
+
     {/* Desktop only: the bike stands on the footer line at the lower right, behind the class cards. */}
     <SpinBike variant="slot" class="bottom-0 right-6 w-[300px]" />
   </section>

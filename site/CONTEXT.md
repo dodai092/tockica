@@ -81,6 +81,16 @@ until opening, when it replaces the **Waitlist page** as the homepage.
 
 _Avoid_: old homepage, real homepage
 
+### Playlist card
+
+What an instructor page shows for their Spotify playlist before Spotify's own player is ready: cover, name and the
+first songs, with a link to Spotify. The player replaces it once loaded. It is not the player and not a link-out.
+
+_Avoid_: playlist preview, playlist placeholder, fake player
+
+**Why:** the player alone left a blank box for a few seconds. "Placeholder" is already taken here for a missing
+piece of Dunia's content, so the card needed its own name.
+
 ## Related docs
 
 - [SETUP.md](./SETUP.md), the build reference kept from the template

@@ -1,10 +1,15 @@
 ---
-// An instructor's Spotify playlist, loaded with the page (Antun, 2026-11-19: no click first). Spotify's own player,
-// so it sets Spotify cookies on load: the privacy page has to name Spotify. Without a playlist id it is a Placeholder.
-// The embed lays itself out by its width, so the box is capped on desktop and full width on a phone.
+// An instructor's Spotify playlist. The page shows a prebuilt card at once (name, cover and first songs from
+// src/data/playlists.json, saved by `npm run playlists`) and Spotify's own player loads behind it once the page has
+// loaded and gone idle, then fades in over the card (Antun, 2026-11-20: loaded ahead, no click first, the player stays).
+// Spotify's player sets Spotify cookies on load: the privacy page names Spotify. Without a playlist id it is a Placeholder.
+// Spotify lays its player out by width and height, and looks right between about 300 and 650 px wide. Desktop box: 608 wide
+// (two class cards) and 452 tall, five songs. Phone: 152 tall, Spotify's compact player, so the visitor scrolls past it.
 import Placeholder from '~/components/client/Placeholder.astro';
+import playlists from '~/data/playlists.json';
 import { getCopy } from '~/i18n';
 import type { Lang } from '~/i18n';
+import { withBase } from '~/lib/base';
 
 interface Props {
   lang: Lang;
@@ -14,27 +19,77 @@ interface Props {
 
 const { lang, first, playlist } = Astro.props;
 const t = getCopy(lang).instructorPage;
+const snap = playlist
+  ? (playlists as Record<string, { title: string; tracks: { title: string; artist: string }[] }>)[playlist]
+  : null;
+if (playlist && !snap) throw new Error(`No saved card for playlist ${playlist}. Run npm run playlists.`);
 ---
 
 {
-  playlist ? (
-    <div data-playlist={playlist} class="w-full max-w-xl">
-      <iframe
-        src={`https://open.spotify.com/embed/playlist/${encodeURIComponent(playlist)}`}
-        title={`${t.playlist}: ${first}`}
-        width="100%"
-        height="352"
-        loading="lazy"
-        allow="encrypted-media"
-        class="block rounded-xl border-0"
-      />
-      <noscript>
+  playlist && snap ? (
+    <div
+      data-playlist={playlist}
+      class="group relative h-[152px] w-full max-w-[608px] overflow-hidden rounded-xl bg-accent sm:h-[452px]"
+    >
+      <div data-playlist-card class="flex h-full flex-col gap-3 rounded-xl border border-white/10 p-4 sm:gap-4 sm:p-5">
+        <div class="flex items-center gap-4">
+          <img
+            src={withBase(`/playlists/${playlist}.jpg`)}
+            width="96"
+            height="96"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="size-20 flex-none rounded-md object-cover sm:size-24"
+          />
+          <h3 class="text-xl font-extrabold leading-tight text-balance text-heading">{snap.title}</h3>
+        </div>
+        <ol class="hidden min-h-0 flex-1 divide-y divide-white/10 overflow-hidden text-sm sm:block">
+          {snap.tracks.slice(0, 6).map((s) => (
+            <li class="flex items-baseline justify-between gap-3 py-1.5">
+              <span class="truncate font-semibold text-heading">{s.title}</span>
+              <span class="flex-none truncate text-muted max-w-[45%]">{s.artist}</span>
+            </li>
+          ))}
+        </ol>
         <a class="font-semibold text-link underline" href={`https://open.spotify.com/playlist/${playlist}`}>
           Spotify
         </a>
-      </noscript>
+      </div>
+      <iframe
+        data-src={`https://open.spotify.com/embed/playlist/${encodeURIComponent(playlist)}`}
+        title={`${t.playlist}: ${first}`}
+        width="100%"
+        height="452"
+        allow="encrypted-media"
+        class="pointer-events-none absolute inset-0 block h-full w-full rounded-xl border-0 opacity-0 transition-opacity duration-[240ms] ease-in-out group-data-[ready=true]:pointer-events-auto group-data-[ready=true]:opacity-100 motion-reduce:duration-200"
+      />
     </div>
   ) : (
     <Placeholder lang={lang} label={`${first} Spotify playlist id (Dunia doc item 1)`} />
   )
 }
+
+<script>
+  // After the page has loaded and gone idle, give each iframe its address. When it has loaded, fade it in and take the
+  // card out of the tab order and the accessibility tree. Without this script the card and its Spotify link stay.
+  const start = () => {
+    document.querySelectorAll<HTMLElement>('[data-playlist]').forEach((box) => {
+      const frame = box.querySelector<HTMLIFrameElement>('iframe');
+      if (!frame?.dataset.src || frame.src) return;
+      frame.addEventListener(
+        'load',
+        () => {
+          box.dataset.ready = 'true';
+          box.querySelector('[data-playlist-card]')?.setAttribute('inert', '');
+        },
+        { once: true }
+      );
+      frame.src = frame.dataset.src;
+    });
+  };
+  const idle = () =>
+    'requestIdleCallback' in window ? requestIdleCallback(start, { timeout: 2000 }) : setTimeout(start, 200);
+  if (document.readyState === 'complete') idle();
+  else window.addEventListener('load', idle, { once: true });
+</script>
