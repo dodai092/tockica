@@ -3,8 +3,9 @@
 // src/data/playlists.json, saved by `npm run playlists`) and Spotify's own player loads behind it once the page has
 // loaded and gone idle, then fades in over the card (Antun, 2026-11-20: loaded ahead, no click first, the player stays).
 // Spotify's player sets Spotify cookies on load: the privacy page names Spotify. Without a playlist id it is a Placeholder.
-// Spotify lays its player out by width and height, and looks right between about 300 and 650 px wide. Desktop box: 608 wide
-// (two class cards) and 452 tall, five songs. Phone: 152 tall, Spotify's compact player, so the visitor scrolls past it.
+// Spotify's player has two fixed layouts: compact (152 px, whatever the height up to about 340) and full (from 352 px).
+// It looks right between about 300 and 650 px wide. Desktop box: 608 wide (two class cards) and 452 tall, five songs.
+// Phone: 352 tall, the full layout (Antun, 2026-11-20: the 152 px compact one was too cramped).
 import Placeholder from '~/components/client/Placeholder.astro';
 import playlists from '~/data/playlists.json';
 import { getCopy } from '~/i18n';
@@ -29,9 +30,9 @@ if (playlist && !snap) throw new Error(`No saved card for playlist ${playlist}. 
   playlist && snap ? (
     <div
       data-playlist={playlist}
-      class="group relative h-[152px] w-full max-w-[608px] overflow-hidden rounded-xl bg-accent sm:h-[452px]"
+      class="group relative h-[352px] w-full max-w-[608px] overflow-hidden rounded-xl bg-accent sm:h-[452px]"
     >
-      <div data-playlist-card class="flex h-full flex-col gap-3 rounded-xl border border-white/10 p-4 sm:gap-4 sm:p-5">
+      <div data-playlist-card class="flex h-full flex-col gap-4 rounded-xl border border-white/10 p-5">
         <div class="flex items-center gap-4">
           <img
             src={withBase(`/playlists/${playlist}.jpg`)}
@@ -40,11 +41,11 @@ if (playlist && !snap) throw new Error(`No saved card for playlist ${playlist}. 
             alt=""
             loading="lazy"
             decoding="async"
-            class="size-20 flex-none rounded-md object-cover sm:size-24"
+            class="size-24 flex-none rounded-md object-cover"
           />
           <h3 class="text-xl font-extrabold leading-tight text-balance text-heading">{snap.title}</h3>
         </div>
-        <ol class="hidden min-h-0 flex-1 divide-y divide-white/10 overflow-hidden text-sm sm:block">
+        <ol class="min-h-0 flex-1 divide-y divide-white/10 overflow-hidden text-sm">
           {snap.tracks.slice(0, 6).map((s) => (
             <li class="flex items-baseline justify-between gap-3 py-1.5">
               <span class="truncate font-semibold text-heading">{s.title}</span>

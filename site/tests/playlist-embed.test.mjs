@@ -121,10 +121,10 @@ test('Without JavaScript the card and its Spotify link stay and nothing loads', 
 });
 
 for (const [name, width, w, h] of [
-  ['phone', 375, 343, 152],
+  ['phone', 375, 343, 352],
   ['desktop', 1280, 608, 452],
 ]) {
-  test(`${name}: the playlist box is ${w} x ${h}, Spotify's compact player on a phone and two class cards wide on desktop`, async () => {
+  test(`${name}: the playlist box is ${w} x ${h}, Spotify's full player on a phone and two class cards wide on desktop`, async () => {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.route('https://open.spotify.com/**', (route) =>
       route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><body>player</body>' })
