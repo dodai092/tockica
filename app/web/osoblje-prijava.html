@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Recepcija</title>
+<style>
+/* Reception check-in (plan 2026-11-21-reception-check-in.md, layout B of .impeccable/options/checkin-screen-b.html).
+   The site's dark look (site/src/brand.ts): slate page, near-white button with a slate label, no red anywhere.
+   System fonts only: nothing is loaded from another site. Wording is proposed, Dunia approves it. */
+:root{--page:#232a35;--card:#3a4454;--ink:#f7f7f7;--text:#e5e7eb;--muted:#c4c8d0;--line:#8791a3;--btn:#f7f7f7;--btn-text:#232a35;--btn-hover:#e0e0e0;--err:#ffb3ad}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--page);color:var(--text);font:400 16px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2{font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);margin:0}
+h1{font-weight:800;font-size:22px;line-height:1.2}
+h2{font-weight:800;font-size:20px;line-height:1.2}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:1px solid rgb(255 255 255/.1)}
+.bar img{height:44px;width:auto;display:block}
+main{max-width:980px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+.slot{min-height:24px;margin:0 0 8px;font-size:14px;color:var(--err)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+button{font:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn{min-height:48px;padding:12px 16px;font-weight:600;color:var(--btn-text);background:var(--btn);border:1px solid var(--btn);border-radius:12px}
+.btn:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.plain{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.plain:hover{background:rgb(255 255 255/.08)}
+.card{max-width:25rem;margin:24px auto;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:24px}
+.card .btn{width:100%;margin-top:8px}
+.f{margin:16px 0 0}
+label{display:block;font-size:14px;font-weight:500;margin:0 0 4px}
+input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 12px}
+.cls{flex:none;min-width:150px;min-height:44px;text-align:left;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid transparent;color:var(--text)}
+.cls b{display:block;font:800 16px Montserrat,system-ui,sans-serif;color:var(--ink)}
+.cls .sub{font-size:14px;color:var(--muted)}
+.cls[aria-pressed=true]{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
+.cls.past b,.cls.past{color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;justify-content:space-between;margin:0 0 8px}
+.sub{font-size:14px;color:var(--muted)}
+.legend{display:flex;gap:16px;margin:0 0 12px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.legend svg{width:18px;height:18px;stroke:var(--ink)}
+ul{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:8px 12px;margin:0 0 8px;background:var(--card);border-radius:12px}
+.bike{font:800 18px Montserrat,system-ui,sans-serif;color:var(--ink);text-align:center}
+.nm{color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.acts{display:flex;gap:8px;align-items:center}
+.ib{width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.ib:hover{border-color:var(--ink)}
+.ib[aria-pressed=true]{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
+.ib[aria-pressed=true]:hover{border-color:var(--btn)}
+@media (max-width:540px){.row{grid-template-columns:36px 1fr auto}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">
+  <img src="/prijava-logo.svg" alt="Točkica na i">
+  <button id="logout" type="button" class="btn plain" hidden>Odjava</button>
+</div>
+<main>
+<form id="login" class="card" hidden>
+  <h1>Prijava za osoblje</h1>
+  <div class="f"><label for="staffEmail">Email</label>
+  <input id="staffEmail" type="email" autocomplete="username" required></div>
+  <div class="f"><label for="staffPassword">Lozinka</label>
+  <input id="staffPassword" type="password" autocomplete="current-password" required></div>
+  <p id="loginMsg" class="slot" role="alert"></p>
+  <button type="submit" class="btn">Prijavi me</button>
+</form>
+
+<section id="screen" hidden>
+  <h1 id="title" tabindex="-1">Recepcija</h1>
+  <p id="empty" class="sub" hidden>Danas nema treninga.</p>
+  <div id="strip" class="strip" role="group" aria-label="Današnji treninzi"></div>
+  <div id="detail" hidden>
+    <div class="top"><h2 id="classTitle"></h2><div id="counts" class="sub"></div></div>
+    <p class="legend">
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Dolazak</span>
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>No-show</span>
+    </p>
+    <p id="err" class="slot" role="alert"></p>
+    <ul id="riders"></ul>
+  </div>
+</section>
+<p id="announce" class="sr-only" role="status"></p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const WORD = { booked: 'Rezervirano', attended: 'Došao', no_show: 'No-show' };
+  const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const T = {
+    wrong: 'Pogrešan email ili lozinka.', later: 'Trenutno nije dostupno, pokušaj kasnije.', tooMany: 'Previše pokušaja. Pokušaj ponovno za 15 minuta.',
+    noAccess: 'Ovaj račun nema pristup recepciji.', notSaved: 'Promjena nije spremljena. Popis je osvježen.', loadFail: 'Popis se nije učitao. Pokušaj ponovno.',
+  };
+  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  // Messages never push the page: an error has a line that is always reserved, a success is only announced to screen readers.
+  const loginSay = (text) => { $('loginMsg').textContent = text; };
+  const fail = (text) => { $('err').textContent = text; };
+  const announce = (text) => { $('announce').textContent = text; };
+  const time = (iso) => new Intl.DateTimeFormat('hr-HR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Zagreb' }).format(new Date(iso));
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) { if (k === 'class') n.className = v; else if (k === 'html') n.innerHTML = v; else n.setAttribute(k, v); }
+    n.append(...kids);
+    return n;
+  };
+
+  let classes = [], current = null, riders = [];
+
+  const showLogin = () => { $('login').hidden = false; $('screen').hidden = true; $('logout').hidden = true; $('staffEmail').focus(); };
+  const showScreen = () => { $('login').hidden = true; $('screen').hidden = false; $('logout').hidden = false; };
+  const lostSession = () => { loginSay(''); showLogin(); };
+
+  const counts = () => {
+    const n = (s) => riders.filter((r) => r.status === s).length;
+    $('counts').textContent = `${n('attended')} došlo, ${n('no_show')} nije došlo, ${n('booked')} čeka`;
+  };
+
+  const rowFor = (r) => {
+    const who = `bicikl ${r.bikeNo}, ${r.name}`;
+    return el('li', { class: 'row', 'data-id': r.bookingId },
+      el('span', { class: 'bike' }, String(r.bikeNo)),
+      el('span', { class: 'nm' }, r.name),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', class: 'ib', 'data-set': 'attended', 'aria-pressed': String(r.status === 'attended'), 'aria-label': `Dolazak, ${who}`, html: CHECK }),
+        el('button', { type: 'button', class: 'ib', 'data-set': 'no_show', 'aria-pressed': String(r.status === 'no_show'), 'aria-label': `No-show, ${who}`, html: CROSS })));
+  };
+
+  // Redraws the rows only. The class strip keeps its buttons, so focus stays where it is.
+  const drawRiders = () => {
+    $('riders').replaceChildren(...riders.map(rowFor));
+    counts();
+  };
+
+  const loadRoster = async () => {
+    const asked = current;
+    const r = await api(`/api/osoblje/prijava/trening?id=${encodeURIComponent(asked.id)}`);
+    if (r.status === 401) return lostSession();
+    if (!r.ok) return fail(T.loadFail);
+    const body = await r.json();
+    // A slower answer for a class that is no longer selected must not land under the other class's title.
+    if (asked !== current) return;
+    riders = body.riders;
+    fail('');
+    drawRiders();
+  };
+
+  const pick = async (cls) => {
+    current = cls;
+    for (const b of $('strip').children) b.setAttribute('aria-pressed', String(b.dataset.id === cls.id));
+    $('classTitle').textContent = `${time(cls.startsAt)} ${cls.name}, ${cls.instructor}`;
+    $('detail').hidden = false;
+    // The old class's riders go at once, so no button for another class sits under this class's title.
+    riders = [];
+    drawRiders();
+    fail('');
+    announce('');
+    await loadRoster();
+  };
+
+  const drawStrip = (now) => {
+    $('strip').replaceChildren(...classes.map((c) => {
+      const ended = new Date(c.startsAt).getTime() + c.durationMin * 60000 <= now;
+      return el('button', { type: 'button', class: `cls${ended ? ' past' : ''}`, 'data-id': c.id, 'aria-pressed': 'false' },
+        el('b', {}, `${time(c.startsAt)} ${c.name}`), el('span', { class: 'sub' }, `${c.instructor}, ${c.riders} prijavljenih${ended ? ', završen' : ''}`));
+    }));
+  };
+
+  const start = async () => {
+    const me = await api('/api/osoblje/ja');
+    if (me.status === 401) return showLogin();
+    if (!me.ok) { showLogin(); return loginSay(T.later); }
+    const list = await api('/api/osoblje/prijava/treninzi');
+    if (list.status === 403) { showLogin(); return loginSay(T.noAccess); }
+    if (!list.ok) { showScreen(); return fail(T.loadFail); }
+    classes = (await list.json()).classes;
+    showScreen();
+    $('empty').hidden = classes.length > 0;
+    const now = Date.now();
+    drawStrip(now);
+    if (classes.length) await pick(classes.find((c) => new Date(c.startsAt).getTime() + c.durationMin * 60000 > now) ?? classes[classes.length - 1]);
+    $('title').focus();
+  };
+
+  $('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginSay('');
+    const r = await api('/api/staff-login', 'POST', { email: $('staffEmail').value, password: $('staffPassword').value });
+    if (r.status === 200) { $('staffPassword').value = ''; return start(); }
+    loginSay(r.status === 429 ? T.tooMany : r.status === 503 ? T.later : T.wrong);
+  });
+
+  $('logout').addEventListener('click', async () => { await api('/api/osoblje/odjava', 'POST', {}); classes = []; riders = []; $('detail').hidden = true; fail(''); announce(''); loginSay(''); showLogin(); });
+
+  $('strip').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) pick(classes.find((c) => c.id === b.dataset.id)); });
+
+  $('riders').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-set]');
+    if (!b) return;
+    const li = b.closest('li'), rider = riders.find((r) => r.bookingId === li.dataset.id);
+    // Tapping the filled button goes back to waiting, but only while the class runs. Once it has ended the sweep
+    // has decided, and the status changes only by tapping the other button.
+    const ended = new Date(current.startsAt).getTime() + current.durationMin * 60000 <= Date.now();
+    const set = rider.status === b.dataset.set ? 'booked' : b.dataset.set;
+    if (set === 'booked' && ended) return;
+    const r = await api('/api/osoblje/prijava/status', 'POST', { bookingId: rider.bookingId, status: set });
+    if (r.status === 401) return lostSession();
+    if (!r.ok) { await loadRoster(); return fail(T.notSaved); }
+    const out = await r.json();
+    rider.status = out.status;
+    rider.checkedInAt = out.checkedInAt;
+    fail('');
+    announce(`${rider.name}: ${WORD[rider.status]}`);
+    // The buttons stay, so only their pressed state changes and focus stays on the button just pressed.
+    for (const btn of li.querySelectorAll('[data-set]')) btn.setAttribute('aria-pressed', String(btn.dataset.set === rider.status));
+    counts();
+  });
+
+  // Back on the tab after a while: the list may have changed (a booking, the no-show sweep).
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && current && !$('screen').hidden) loadRoster(); });
+
+  start();
+})();
+</script>
+</body>
+</html>

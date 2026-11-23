@@ -101,3 +101,91 @@ test('closing a class does not mail the waitlist, the class is already over', ()
 
   assert.equal(store.outbox.length, 0);
 });
+
+// Reception check-in rules (plan 2026-11-21-reception-check-in.md). Namespace import: the old tests above keep running
+// while these fail one by one until the functions exist.
+import * as ci from '../src/checkin.js';
+
+const dayOf = (session) => studioTime.localDate(session.startsAt);
+const dayStart = (session) => new Date(studioTime.toUtc(`${dayOf(session)}T00:00`));
+const nextDayStart = (session) => new Date(studioTime.toUtc(`${studioTime.addDays(dayOf(session), 1)}T00:00`));
+const endOfClass = (session) => new Date(Date.parse(session.startsAt) + session.durationMin * MIN);
+
+test('check-in is allowed any time on the class day until it ends, not the day before or after', () => {
+  const { session } = setup();
+
+  assert.equal(ci.checkInAllowed(session, dayStart(session)), true);
+  assert.equal(ci.checkInAllowed(session, new Date(dayStart(session).getTime() - MIN)), false);
+  assert.equal(ci.checkInAllowed(session, new Date(endOfClass(session).getTime() - MIN)), true);
+  assert.equal(ci.checkInAllowed(session, new Date(endOfClass(session).getTime() + MIN)), false);
+});
+
+test('reception can check a rider in hours before the class and take it back the same day', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  const morning = dayStart(session);
+
+  ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: morning });
+  assert.equal(booking.status, 'attended');
+  assert.ok(booking.checkedInAt);
+
+  ci.setStatus(store, booking.id, 'booked', { role: 'reception', now: morning });
+  assert.equal(booking.status, 'booked');
+  assert.equal(booking.checkedInAt, null);
+});
+
+test('after the class ends reception can set attended or no-show but not booked', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  const after = new Date(endOfClass(session).getTime() + MIN);
+  closeClass(store, session.id, after);
+
+  ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: after });
+  assert.equal(booking.status, 'attended');
+  ci.setStatus(store, booking.id, 'no_show', { role: 'reception', now: after });
+  assert.equal(booking.status, 'no_show');
+  assert.throws(() => ci.setStatus(store, booking.id, 'booked', { role: 'reception', now: after }), { name: 'StatusChangeNotAllowedError' });
+});
+
+test('the next day only the owner can change a status', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  const nextDay = new Date(nextDayStart(session).getTime() + MIN);
+  closeClass(store, session.id, nextDay);
+
+  assert.throws(() => ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: nextDay }), { name: 'StatusChangeNotAllowedError' });
+  ci.setStatus(store, booking.id, 'attended', { role: 'owner', now: nextDay });
+  assert.equal(booking.status, 'attended');
+});
+
+test('an instructor can never change a status', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+
+  assert.throws(() => ci.setStatus(store, booking.id, 'attended', { role: 'instructor', now: dayStart(session) }), { name: 'StatusChangeNotAllowedError' });
+  assert.equal(booking.status, 'booked');
+});
+
+test('a cancelled or late-cancelled booking cannot be checked in', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  for (const status of ['cancelled', 'late_cancel']) {
+    booking.status = status;
+    assert.throws(() => ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: dayStart(session) }), { name: 'StatusChangeNotAllowedError' });
+    assert.equal(booking.status, status);
+  }
+});
+
+test('a no-show keeps its credit spent, also after reception flips it back and forth', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  const before = balance(store, 'acc_test1', NOW);
+  const after = new Date(endOfClass(session).getTime() + MIN);
+
+  closeClass(store, session.id, after);
+  assert.equal(booking.status, 'no_show');
+  assert.equal(balance(store, 'acc_test1', after), before);
+  ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: after });
+  ci.setStatus(store, booking.id, 'no_show', { role: 'reception', now: after });
+  assert.equal(balance(store, 'acc_test1', after), before);
+});
