@@ -22,6 +22,7 @@ async function serveStatic(rawUrl, res) {
   }
   // /prijava and /en/prijava are one page, the language comes from the path. The root netlify.toml rewrites the same.
   if (pathname === '/' || pathname === '/prijava' || pathname === '/en/prijava') pathname = '/prijava.html';
+  if (pathname === '/osoblje') pathname = '/osoblje.html';
   const parts = pathname.split('/').filter(Boolean);
   // No dot-files, no parent folders, no backslashes or nul bytes, only known page types.
   if (!parts.length || parts.some((p) => p.startsWith('.') || p.includes('\\') || p.includes('\0'))) return notFound();

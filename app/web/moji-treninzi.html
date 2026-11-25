@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Moji treninzi</title>
+<style>
+/* Trainer screen, read only (options previews in Tockica/.impeccable/options/: staff-screens.html A, and
+   trainer-week-markers.html A and A). Same look as the reception page: slate page, near-white button with a slate label,
+   no red. System fonts only. Wording is proposed, Dunia approves it. */
+:root{--page:#232a35;--card:#3a4454;--ink:#f7f7f7;--text:#e5e7eb;--muted:#c4c8d0;--line:#8791a3;--btn:#f7f7f7;--btn-text:#232a35;--btn-hover:#e0e0e0;--err:#ffb3ad}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--page);color:var(--text);font:400 16px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2{font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);margin:0}
+h1,h2{font-weight:800;font-size:22px;line-height:1.2}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:1px solid rgb(255 255 255/.1)}
+.bar img{height:44px;width:auto;display:block}
+main{max-width:980px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+.slot{min-height:24px;margin:0 0 8px;font-size:14px;color:var(--err)}
+.sub{font-size:14px;color:var(--muted);margin:0 0 12px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn{min-height:48px;padding:12px 16px;font-weight:600;color:var(--btn-text);background:var(--btn);border:1px solid var(--btn);border-radius:12px}
+.btn:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.plain{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.plain:hover{background:rgb(255 255 255/.08)}
+.card{max-width:25rem;margin:24px auto;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:24px}
+.card .btn{width:100%;margin-top:8px}
+.f{margin:16px 0 0}
+label{display:block;font-size:14px;font-weight:500;margin:0 0 4px}
+input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
+ul{list-style:none;margin:0;padding:0}
+.cls{display:block;width:100%;text-align:left;min-height:48px;padding:12px 14px;margin:0 0 8px;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;color:var(--text)}
+.cls b{display:block;font:800 16px Montserrat,system-ui,sans-serif;color:var(--ink)}
+.cls:hover{border-color:var(--ink)}
+.cls[aria-expanded=true]{border-color:var(--ink)}
+.roster{margin:0 0 12px;padding:4px 14px;background:var(--card);border-radius:12px}
+.rider{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:8px 0;border-top:1px solid rgb(255 255 255/.1)}
+.bike{font:800 18px Montserrat,system-ui,sans-serif;color:var(--ink);text-align:center}
+.nm{color:var(--ink);overflow-wrap:anywhere}
+.day{font-size:15px;margin:16px 0 8px}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:0 6px;font-size:12px;color:var(--ink);white-space:nowrap}
+.mark{display:inline-flex;align-items:center;gap:2px;color:var(--ink);font-size:12px;vertical-align:-3px}
+.mark svg{width:16px;height:16px;fill:currentColor}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:8px 0;font-size:12px;color:var(--muted)}
+.legend .mark{margin-right:4px}
+.word{font-size:13px;font-weight:600;color:var(--btn-text);background:var(--btn);border-radius:8px;padding:2px 8px;white-space:nowrap}
+.word.wait{background:transparent;color:var(--muted);border:1px solid var(--line)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">
+  <img src="/prijava-logo.svg" alt="Točkica na i">
+  <button id="logout" type="button" class="btn plain" hidden>Odjava</button>
+</div>
+<main>
+<form id="login" class="card" hidden>
+  <h2>Prijava za trenere</h2>
+  <div class="f"><label for="staffEmail">Email</label>
+  <input id="staffEmail" type="email" autocomplete="username" required></div>
+  <div class="f"><label for="staffPassword">Lozinka</label>
+  <input id="staffPassword" type="password" autocomplete="current-password" required></div>
+  <p id="loginMsg" class="slot" role="alert"></p>
+  <button type="submit" class="btn">Prijavi me</button>
+</form>
+
+<section id="screen" hidden>
+  <h1 id="title" tabindex="-1">Moji treninzi</h1>
+  <p id="empty" class="sub" hidden>Nemaš treninga u sljedećih 7 dana.</p>
+  <div id="classes"></div>
+</section>
+<p id="err" class="slot" role="alert"></p>
+<p id="announce" class="sr-only" role="status"></p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const WORD = { booked: 'Rezervirano', attended: 'Došao', no_show: 'No-show' };
+  const T = { wrong: 'Pogrešan email ili lozinka.', later: 'Trenutno nije dostupno, pokušaj kasnije.', tooMany: 'Previše pokušaja. Pokušaj ponovno za 15 minuta.', noAccess: 'Ovaj račun nema pristup popisu za trenere.', loadFail: 'Popis se nije učitao. Pokušaj ponovno.' };
+  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  // Messages never push the page: the error line is always reserved, and what opens or loads is only announced.
+  const loginSay = (text) => { $('loginMsg').textContent = text; };
+  const fail = (text) => { $('err').textContent = text; };
+  const time = (iso) => new Intl.DateTimeFormat('hr-HR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Zagreb' }).format(new Date(iso));
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    n.append(...kids);
+    return n;
+  };
+
+  const showLogin = () => { $('login').hidden = false; $('screen').hidden = true; $('logout').hidden = true; $('staffEmail').focus(); };
+  const showScreen = () => { $('login').hidden = true; $('screen').hidden = false; $('logout').hidden = false; };
+  const lostSession = () => { loginSay(''); showLogin(); };
+
+  // Day headings for the 7 days: "Danas, pon 11.1.", then "Sri 13.1.". Days are studio days in Zagreb.
+  const dayName = (date) => {
+    const parts = new Intl.DateTimeFormat('hr-HR', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'Europe/Zagreb' }).formatToParts(date);
+    const get = (type) => parts.find((p) => p.type === type).value;
+    return `${get('weekday')} ${Number(get('day'))}.${Number(get('month'))}.`;
+  };
+
+  // Markers: a word for the first time, a star for a birthday, a heart with the ride number for a milestone.
+  const SHAPE = { star: 'M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5-4.8-4.6 6.6-.9z', heart: 'M12 21s-8.5-5.2-8.5-11.3A4.7 4.7 0 0 1 12 6.9a4.7 4.7 0 0 1 8.5 2.8C20.5 15.8 12 21 12 21z' };
+  const icon = (shape, label, text = '') => {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const path = document.createElementNS(ns, 'path');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    path.setAttribute('d', SHAPE[shape]);
+    svg.append(path);
+    const mark = el('span', { class: 'mark' }, svg, ...(text ? [el('span', { 'aria-hidden': 'true' }, text)] : []));
+    if (label) { mark.setAttribute('role', 'img'); mark.setAttribute('aria-label', label); }
+    return mark;
+  };
+  const firstTag = () => el('span', { class: 'tag' }, 'Prvi put');
+  const legend = () => el('div', { class: 'legend' }, firstTag(), el('span', {}, icon('star'), 'rođendan'), el('span', {}, icon('heart'), '50., 100. ili 150. trening'));
+  const markers = (x) => [
+    ...(x.firstTime ? [' ', firstTag()] : []),
+    ...(x.birthday ? [' ', icon('star', 'rođendan')] : []),
+    ...(x.milestone ? [' ', icon('heart', `${x.milestone}. trening`, `${x.milestone}.`)] : []),
+  ];
+
+  // One card per class. Tapping it opens the roster under the card, read only, and tapping again closes it.
+  const card = (c, isToday) => {
+    const roster = el('div', { class: 'roster', id: `r-${c.id}`, hidden: '' });
+    // Who came only means something on the day itself.
+    const count = el('span', { class: 'sub' }, isToday ? `${c.riders} prijavljenih, ${c.checkedIn} došlo` : `${c.riders} prijavljenih`);
+    const btn = el('button', { type: 'button', class: 'cls', 'aria-expanded': 'false', 'aria-controls': `r-${c.id}` },
+      el('b', {}, `${time(c.startsAt)} ${c.name}`), count);
+    let loaded = false;
+    btn.addEventListener('click', async () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      roster.hidden = !open;
+      if (!open || loaded) return;
+      const r = await api(`/api/osoblje/moji-treninzi/trening?id=${encodeURIComponent(c.id)}`);
+      if (r.status === 401) return lostSession();
+      if (!r.ok) { btn.setAttribute('aria-expanded', 'false'); roster.hidden = true; return fail(T.loadFail); }
+      loaded = true;
+      fail('');
+      const { riders } = await r.json();
+      const first = riders.filter((x) => x.firstTime).length;
+      if (first) count.append(`, ${first} prvi put`);
+      roster.replaceChildren(...(riders.length ? [legend(), ...riders.map((x) => el('div', { class: 'rider' },
+        el('span', { class: 'bike' }, String(x.bikeNo)),
+        el('span', {}, el('span', { class: 'nm' }, x.name), ...markers(x)),
+        el('span', { class: x.status === 'booked' ? 'word wait' : 'word' }, WORD[x.status] ?? x.status)))] : [el('p', { class: 'sub' }, 'Nema prijavljenih.')]));
+      $('announce').textContent = `${time(c.startsAt)} ${c.name}: ${riders.length} prijavljenih`;
+    });
+    return [btn, roster];
+  };
+
+  const start = async () => {
+    const me = await api('/api/osoblje/ja');
+    if (me.status === 401) return showLogin();
+    if (!me.ok) { showLogin(); return loginSay(T.later); }
+    const list = await api('/api/osoblje/moji-treninzi');
+    if (list.status === 403) { showLogin(); return loginSay(T.noAccess); }
+    if (!list.ok) { showScreen(); return fail(T.loadFail); }
+    const { classes } = await list.json();
+    showScreen();
+    $('empty').hidden = classes.length > 0;
+    const today = dayName(new Date());
+    const days = new Map();
+    for (const c of classes) {
+      const day = dayName(new Date(c.startsAt));
+      days.set(day, [...(days.get(day) ?? []), c]);
+    }
+    $('classes').replaceChildren(...[...days].flatMap(([day, list]) => [
+      el('h2', { class: 'day' }, day === today ? `Danas, ${day}` : day[0].toUpperCase() + day.slice(1)),
+      el('ul', {}, ...list.map((c) => el('li', {}, ...card(c, day === today)))),
+    ]));
+    $('title').focus();
+  };
+
+  $('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginSay('');
+    const r = await api('/api/staff-login', 'POST', { email: $('staffEmail').value, password: $('staffPassword').value });
+    if (r.status === 200) { $('staffPassword').value = ''; return start(); }
+    loginSay(r.status === 429 ? T.tooMany : r.status === 503 ? T.later : T.wrong);
+  });
+
+  $('logout').addEventListener('click', async () => { await api('/api/osoblje/odjava', 'POST', {}); $('classes').replaceChildren(); fail(''); loginSay(''); showLogin(); });
+
+  start();
+})();
+</script>
+</body>
+</html>

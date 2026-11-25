@@ -4,7 +4,7 @@ import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { openTestDb } from './db.js';
-import { createStaff, resetStaffPassword, StaffAdminError } from '../server/staff-admin.js';
+import { createStaff, resetStaffPassword, setStaffInstructor, StaffAdminError } from '../server/staff-admin.js';
 import { createSupabaseAdmin } from '../server/supabase-admin.js';
 
 let db, admin, calls;
@@ -12,6 +12,7 @@ before(async () => {
   db = await openTestDb();
   const dir = new URL('../server/db/migrations/', import.meta.url);
   for (const f of readdirSync(dir).filter((n) => n.endsWith('.sql')).sort()) await db.exec(readFileSync(new URL(f, dir), 'utf8'));
+  await db.exec(`insert into instructors (id, first_name, full_name, slug) values ('ins_1', 'Mirna', 'Mirna Zebec', 'mirna')`);
 });
 after(() => db.close());
 
@@ -84,6 +85,26 @@ test('reset for an unknown email, or a row with no Supabase user, is refused and
   await assert.rejects(resetStaffPassword({ db, admin, email: 'nobody@studio.test' }), (e) => e.code === 'not_found');
   await db.exec(`insert into staff (id, name, email, role, active) values ('st_n', 'N', 'n@studio.test', 'owner', true)`);
   await assert.rejects(resetStaffPassword({ db, admin, email: 'n@studio.test' }), (e) => e.code === 'no_user');
+  assert.equal(calls.length, 0);
+});
+
+test('create can link a trainer login to an instructor, and an unknown instructor is refused before any user is made', async () => {
+  await createStaff({ db, admin, email: 'mirna@studio.test', name: 'Mirna', role: 'instructor', instructorId: 'ins_1' });
+  assert.equal((await db.query(`select instructor_id from staff where email = 'mirna@studio.test'`)).rows[0].instructor_id, 'ins_1');
+  calls.length = 0;
+  await assert.rejects(createStaff({ db, admin, email: 'x@studio.test', name: 'X', role: 'instructor', instructorId: 'ins_nope' }), (e) => e.code === 'bad_instructor');
+  assert.equal(calls.length, 0);
+  assert.equal((await staffRows()).length, 1);
+});
+
+test('setStaffInstructor links an existing staff row by email, and refuses an unknown person or instructor', async () => {
+  await createStaff({ db, admin, email: 'mirna@studio.test', name: 'Mirna', role: 'instructor' });
+  calls.length = 0;
+  const r = await setStaffInstructor({ db, email: ' MIRNA@studio.test ', instructorId: 'ins_1' });
+  assert.deepEqual(r, { staffId: (await db.query(`select id from staff where email = 'mirna@studio.test'`)).rows[0].id, instructorId: 'ins_1' });
+  assert.equal((await db.query(`select instructor_id from staff where email = 'mirna@studio.test'`)).rows[0].instructor_id, 'ins_1');
+  await assert.rejects(setStaffInstructor({ db, email: 'nobody@studio.test', instructorId: 'ins_1' }), (e) => e.code === 'not_found');
+  await assert.rejects(setStaffInstructor({ db, email: 'mirna@studio.test', instructorId: 'ins_nope' }), (e) => e.code === 'bad_instructor');
   assert.equal(calls.length, 0);
 });
 

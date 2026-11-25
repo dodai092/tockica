@@ -27,3 +27,9 @@
   from = "/en/prijava"
   to = "/prijava.html"
   status = 200
+
+# The one staff address: the staff home, which links to the reception and trainer pages by role.
+[[redirects]]
+  from = "/osoblje"
+  to = "/osoblje.html"
+  status = 200

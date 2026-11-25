@@ -73,7 +73,7 @@ const setStatus = (cookie, bookingId, status) => call('/api/osoblje/prijava/stat
 const statusOf = async (id) => (await db.query('select status, checked_in_at from bookings where id = $1', [id])).rows[0];
 
 test('signed out gets 401 on every check-in route', async () => {
-  for (const path of ['/api/osoblje/prijava/treninzi', '/api/osoblje/prijava/trening?id=cls_today', '/api/osoblje/moji-treninzi/trening?id=cls_today']) {
+  for (const path of ['/api/osoblje/prijava/treninzi', '/api/osoblje/prijava/trening?id=cls_today', '/api/osoblje/moji-treninzi', '/api/osoblje/moji-treninzi/trening?id=cls_today']) {
     assert.equal((await call(path)).status, 401, path);
   }
   assert.equal((await setStatus(null, 'bk_a', 'attended')).status, 401);
@@ -161,6 +161,93 @@ test('a trainer who is the actual instructor of a swapped class sees it, the pla
   assert.equal((await call('/api/osoblje/moji-treninzi/trening?id=cls_today', { cookie: await as('mirna@studio.test') })).status, 403);
 });
 
+test('a trainer lists only their own classes, reception gets 403, and a login with no instructor link lists nothing', async () => {
+  const list = async (email) => call('/api/osoblje/moji-treninzi', { cookie: await as(email) });
+  const mirna = await list('mirna@studio.test');
+  assert.equal(mirna.status, 200);
+  const { classes } = await mirna.json();
+  assert.deepEqual(classes.map((c) => c.id), ['cls_early', 'cls_today']);
+  assert.equal(classes.find((c) => c.id === 'cls_today').riders, 3);
+  assert.deepEqual((await (await list('ivana@studio.test')).json()).classes.map((c) => c.id), ['cls_tomorrow']);
+  assert.equal((await list('desk@studio.test')).status, 403);
+  assert.deepEqual((await (await list('nolink@studio.test')).json()).classes, []);
+});
+
+test('a swapped class shows on the list of the actual trainer only', async () => {
+  await db.exec(`update classes set actual_instructor_id = 'ins_2' where id = 'cls_today'`);
+  const ids = async (email) => (await (await call('/api/osoblje/moji-treninzi', { cookie: await as(email) })).json()).classes.map((c) => c.id);
+  assert.deepEqual(await ids('mirna@studio.test'), ['cls_early']);
+  assert.deepEqual(await ids('ivana@studio.test'), ['cls_today', 'cls_tomorrow']);
+});
+
+test('a trainer list covers 7 studio days: today and the next 6', async () => {
+  // Zagreb is UTC+1 in January. Each pair sits half an hour either side of a studio midnight.
+  await db.exec(`insert into classes (id, name, instructor_id, starts_at, duration_min, release_opens_at, cancelled) values
+    ('cls_yesterday', 'Y', 'ins_1', '2027-01-10T22:30:00Z', 50, '2027-01-01T00:00:00Z', false),
+    ('cls_day7_late', 'L', 'ins_1', '2027-01-17T22:30:00Z', 50, '2027-01-01T00:00:00Z', false),
+    ('cls_day8_early', 'E', 'ins_1', '2027-01-17T23:30:00Z', 50, '2027-01-01T00:00:00Z', false),
+    ('cls_cancelled', 'C', 'ins_1', '2027-01-14T17:00:00Z', 50, '2027-01-01T00:00:00Z', true)`);
+  const { classes } = await (await call('/api/osoblje/moji-treninzi', { cookie: await as('mirna@studio.test') })).json();
+  assert.deepEqual(classes.map((c) => c.id), ['cls_early', 'cls_today', 'cls_day7_late']);
+});
+
 test('the owner can open any class on the trainer roster route', async () => {
   assert.equal((await call('/api/osoblje/moji-treninzi/trening?id=cls_tomorrow', { cookie: await as('owner@studio.test') })).status, 200);
+});
+
+// Trainer markers (Dunia, answer to question 6): first time, birthday on the class day, 50th, 100th and 150th ride.
+const marks = async (classId = 'cls_today', email = 'mirna@studio.test') => {
+  const { riders } = await (await call(`/api/osoblje/moji-treninzi/trening?id=${classId}`, { cookie: await as(email) })).json();
+  return Object.fromEntries(riders.map((r) => [r.bookingId, { firstTime: r.firstTime, birthday: r.birthday, milestone: r.milestone }]));
+};
+const NONE = { firstTime: false, birthday: false, milestone: null };
+/** `count` past classes, one a day before today, each with one booking for the account. */
+const pastRides = (accountId, count, { status = 'attended', guest = null, tag = accountId } = {}) => db.exec(`
+  insert into classes (id, name, instructor_id, starts_at, duration_min, release_opens_at)
+    select 'cls_p_${tag}_' || n, 'Past', 'ins_1', timestamptz '2027-01-11T10:00:00Z' - n * interval '1 day', 50, '2026-01-01T00:00:00Z' from generate_series(1, ${count}) n;
+  insert into bookings (id, class_id, bike_no, account_id, guest_name, status)
+    select 'bk_p_${tag}_' || n, 'cls_p_${tag}_' || n, 1, '${accountId}', ${guest ? `'${guest}'` : 'null'}, '${status}' from generate_series(1, ${count}) n;
+`);
+
+test('first time: no earlier attended ride of their own. A no-show, a ride for a guest or a later ride does not count', async () => {
+  await pastRides('acc_2', 1);
+  await pastRides('acc_1', 1, { status: 'no_show', tag: 'noshow' });
+  await pastRides('acc_1', 1, { guest: 'Netko', tag: 'guest' });
+  await db.exec(`insert into bookings (id, class_id, bike_no, account_id, status) values ('bk_later', 'cls_tomorrow', 3, 'acc_1', 'attended')`);
+  const m = await marks();
+  assert.equal(m.bk_a.firstTime, true);
+  assert.equal(m.bk_b.firstTime, false);
+});
+
+test('milestone: the heart is on the ride that is the 50th, 100th or 150th, and on no other', async () => {
+  for (const [earlier, expected] of [[48, null], [49, 50], [50, null], [99, 100], [149, 150]]) {
+    await db.exec(`delete from bookings where id like 'bk_p_%'; delete from classes where id like 'cls_p_%'`);
+    await pastRides('acc_1', earlier);
+    assert.equal((await marks()).bk_a.milestone, expected, `${earlier} earlier rides`);
+  }
+});
+
+test('birthday: day and month match the class day in Zagreb, and the birth date never leaves the server', async () => {
+  await db.exec(`update accounts set birth_date = '1990-01-11' where id = 'acc_1'; update accounts set birth_date = '1991-01-12' where id = 'acc_2'`);
+  const today = await marks();
+  assert.equal(today.bk_a.birthday, true);
+  assert.equal(today.bk_b.birthday, false);
+  assert.equal((await marks('cls_tomorrow', 'ivana@studio.test')).bk_t.birthday, true, 'the class day counts, not today');
+  // 23:30 UTC on the 11th is already the 12th in Zagreb.
+  await db.exec(`update classes set starts_at = '2027-01-11T23:30:00Z' where id = 'cls_today'`);
+  assert.equal((await marks()).bk_b.birthday, true);
+
+  const body = await (await call('/api/osoblje/moji-treninzi/trening?id=cls_today', { cookie: await as('mirna@studio.test') })).text();
+  assert.doesNotMatch(body, /1990|1991|birth_?date/i);
+});
+
+test('a guest gets no markers, whatever the account holder has', async () => {
+  await db.exec(`update accounts set birth_date = '1990-01-11' where id = 'acc_3'`);
+  await pastRides('acc_3', 49);
+  assert.deepEqual((await marks()).bk_c, NONE);
+});
+
+test('the reception roster carries no trainer markers', async () => {
+  const { riders } = await (await call('/api/osoblje/prijava/trening?id=cls_today', { cookie: await as('desk@studio.test') })).json();
+  for (const r of riders) assert.deepEqual(Object.keys(r).sort(), ['bikeNo', 'bookingId', 'checkedInAt', 'name', 'status']);
 });

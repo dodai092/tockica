@@ -7,7 +7,7 @@ import { createSupabaseAuth } from './auth.js';
 import { getCustomerSession } from './session.js';
 import { getStaffSession } from './staff-session.js';
 import { staffLoginHandler, staffLogoutHandler, staffMeHandler } from './staff-routes.js';
-import { checkinListHandler, rosterHandler, statusHandler, trainerRosterHandler } from './checkin-routes.js';
+import { checkinListHandler, rosterHandler, statusHandler, trainerClassesHandler, trainerRosterHandler } from './checkin-routes.js';
 import { handleHealth } from './health.js';
 import { scheduleHandler } from './public.js';
 import { signupLinkHandler, signupHandler, passwordLinkHandler, passwordResetHandler, loginHandler, logoutHandler, meHandler } from './auth-routes.js';
@@ -44,6 +44,7 @@ export function createRoute({ pool = getPool, auth = envAuth(process.env), now }
   r.staff('/api/osoblje/prijava/treninzi', ['reception', 'owner'], use(checkinListHandler));
   r.staff('/api/osoblje/prijava/trening', ['reception', 'owner'], use(rosterHandler));
   r.staff('/api/osoblje/prijava/status', ['reception', 'owner'], use(statusHandler));
+  r.staff('/api/osoblje/moji-treninzi', ['instructor', 'owner'], use(trainerClassesHandler));
   r.staff('/api/osoblje/moji-treninzi/trening', ['instructor', 'owner'], use(trainerRosterHandler));
   r.customer('/api/logout', use(logoutHandler));
   r.customer('/api/me', use(meHandler));

@@ -26,6 +26,25 @@ async function roster(db, classId) {
   };
 }
 
+const MILESTONE_RIDES = [50, 100, 150];
+
+// Markers for the trainer screen. Only the account holder's own attended rides in earlier classes count, and a guest gets
+// no markers. The birth date is compared here and only true or false is returned.
+async function trainerMarkers(db, classId) {
+  const { rows } = await db.query(
+    `select b.id, b.guest_name is null as own,
+            to_char(a.birth_date, 'MM-DD') = to_char(c.starts_at at time zone 'Europe/Zagreb', 'MM-DD') as birthday,
+            (select count(*)::int from bookings p join classes pc on pc.id = p.class_id
+              where p.account_id = b.account_id and p.guest_name is null and p.status = 'attended' and pc.starts_at < c.starts_at) as earlier
+       from bookings b join accounts a on a.id = b.account_id join classes c on c.id = b.class_id
+      where b.class_id = $1 and ${RIDER}`, [classId]);
+  return new Map(rows.map((r) => [r.id, {
+    firstTime: r.own && r.earlier === 0,
+    birthday: r.own && r.birthday === true,
+    milestone: r.own && MILESTONE_RIDES.includes(r.earlier + 1) ? r.earlier + 1 : null,
+  }]));
+}
+
 /** Today's classes (studio day, Europe/Zagreb), with how many riders and how many are checked in. */
 export const checkinListHandler = ({ db, now }) =>
   only('GET', async () => {
@@ -39,6 +58,21 @@ export const checkinListHandler = ({ db, now }) =>
         where not c.cancelled and (c.starts_at at time zone 'Europe/Zagreb')::date = ($1::timestamptz at time zone 'Europe/Zagreb')::date
         group by c.id, i.first_name order by c.starts_at, c.id`, [now().toISOString()]);
     return json({ classes: rows.map((r) => ({ id: r.id, name: r.name, startsAt: new Date(r.starts_at).toISOString(), durationMin: r.duration_min, instructor: r.instructor, riders: r.riders, checkedIn: r.checked_in })) });
+  });
+
+/** A trainer's classes for today and the next 6 studio days: the actual instructor if the class was swapped, else the planned one. Read only. */
+export const trainerClassesHandler = ({ db, now }) =>
+  only('GET', async (_req, session) => {
+    await sweepEndedClasses(db, now());
+    const { rows } = await db.query(
+      `select c.id, c.name, c.starts_at, c.duration_min, count(b.id)::int as riders, (count(b.id) filter (where b.status = 'attended'))::int as checked_in
+         from classes c
+         join staff s on s.id = $2 and s.instructor_id is not null
+         left join bookings b on b.class_id = c.id and ${RIDER}
+        where not c.cancelled and s.instructor_id = coalesce(c.actual_instructor_id, c.instructor_id)
+          and (c.starts_at at time zone 'Europe/Zagreb')::date - ($1::timestamptz at time zone 'Europe/Zagreb')::date between 0 and 6
+        group by c.id order by c.starts_at, c.id`, [now().toISOString(), session.staffId]);
+    return json({ classes: rows.map((r) => ({ id: r.id, name: r.name, startsAt: new Date(r.starts_at).toISOString(), durationMin: r.duration_min, riders: r.riders, checkedIn: r.checked_in })) });
   });
 
 export const rosterHandler = ({ db, now }) =>
@@ -86,5 +120,7 @@ export const trainerRosterHandler = ({ db, now }) =>
       if (!own) throw new HttpError(403, 'Not your class');
     }
     const out = await roster(db, id);
-    return out ? json(out) : json({ error: 'No such class' }, 404);
+    if (!out) return json({ error: 'No such class' }, 404);
+    const marks = await trainerMarkers(db, id);
+    return json({ ...out, riders: out.riders.map((r) => ({ ...r, ...marks.get(r.bookingId) })) });
   });

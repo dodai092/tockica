@@ -134,6 +134,18 @@ test('reception can check a rider in hours before the class and take it back the
   assert.equal(booking.checkedInAt, null);
 });
 
+test('pressing Dolazak again keeps the first check-in time', () => {
+  const { store, session } = setup();
+  const booking = book(store, session, 1, 'acc_test1');
+  const first = dayStart(session);
+
+  ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: first });
+  ci.setStatus(store, booking.id, 'attended', { role: 'reception', now: new Date(first.getTime() + 30 * MIN) });
+
+  assert.equal(booking.status, 'attended');
+  assert.equal(booking.checkedInAt, first.toISOString());
+});
+
 test('after the class ends reception can set attended or no-show but not booked', () => {
   const { store, session } = setup();
   const booking = book(store, session, 1, 'acc_test1');

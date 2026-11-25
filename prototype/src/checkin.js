@@ -79,7 +79,9 @@ export function setStatus(store, bookingId, status, { role, now }) {
   if (!['booked', 'attended', 'no_show'].includes(status)) deny(`unknown status ${status}`);
   if (role === 'reception' && SAME_DAY(now.toISOString()) !== SAME_DAY(session.startsAt)) deny('not the class day');
   if (now.getTime() >= endOf(session) && status === 'booked') deny('the class has ended');
+  // A second Dolazak press keeps the first time. Only a new check-in stamps the clock.
+  const checkedInAt = status !== 'attended' ? null : booking.status === 'attended' ? booking.checkedInAt : now.toISOString();
   booking.status = status;
-  booking.checkedInAt = status === 'attended' ? now.toISOString() : null;
+  booking.checkedInAt = checkedInAt;
   return booking;
 }

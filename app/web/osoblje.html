@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Osoblje</title>
+<style>
+/* Staff home (options preview B, Tockica/.impeccable/options/staff-screens.html). Same look as the reception page:
+   slate page, near-white button with a slate label, no red. System fonts only. Wording is proposed, Dunia approves it. */
+:root{--page:#232a35;--card:#3a4454;--ink:#f7f7f7;--text:#e5e7eb;--muted:#c4c8d0;--line:#8791a3;--btn:#f7f7f7;--btn-text:#232a35;--btn-hover:#e0e0e0;--err:#ffb3ad}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--page);color:var(--text);font:400 16px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2{font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);margin:0;font-weight:800;font-size:22px;line-height:1.2}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:1px solid rgb(255 255 255/.1)}
+.bar img{height:44px;width:auto;display:block}
+main{max-width:980px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+.slot{min-height:24px;margin:0 0 8px;font-size:14px;color:var(--err)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+button,a{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn{display:inline-block;min-height:48px;padding:12px 16px;font-weight:600;color:var(--btn-text);background:var(--btn);border:1px solid var(--btn);border-radius:12px;text-decoration:none;text-align:center}
+.btn:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.plain{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.plain:hover{background:rgb(255 255 255/.08)}
+.card{max-width:25rem;margin:24px auto;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:24px}
+.card .btn{width:100%;margin-top:8px}
+.f{margin:16px 0 0}
+label{display:block;font-size:14px;font-weight:500;margin:0 0 4px}
+input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
+.sub{font-size:14px;color:var(--muted);margin:4px 0 0}
+.tiles{display:grid;gap:12px;margin:16px 0 0;max-width:25rem}
+.tile{display:block;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:16px;color:var(--text);text-decoration:none}
+.tile b{display:block;font:800 18px Montserrat,system-ui,sans-serif;color:var(--ink)}
+.tile:hover{border-color:var(--ink)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">
+  <img src="/prijava-logo.svg" alt="Točkica na i">
+  <button id="logout" type="button" class="btn plain" hidden>Odjava</button>
+</div>
+<main>
+<form id="login" class="card" hidden>
+  <h2>Prijava za osoblje</h2>
+  <div class="f"><label for="staffEmail">Email</label>
+  <input id="staffEmail" type="email" autocomplete="username" required></div>
+  <div class="f"><label for="staffPassword">Lozinka</label>
+  <input id="staffPassword" type="password" autocomplete="current-password" required></div>
+  <p id="loginMsg" class="slot" role="alert"></p>
+  <button type="submit" class="btn">Prijavi me</button>
+</form>
+
+<section id="home" hidden>
+  <h1 id="title" tabindex="-1">Osoblje</h1>
+  <p id="who" class="sub"></p>
+  <nav id="tiles" class="tiles" aria-label="Stranice za tvoju ulogu"></nav>
+</section>
+<p id="err" class="slot" role="alert"></p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  // Each tile is shown to the roles listed. The server enforces the access on the pages behind the tiles.
+  const TILES = [
+    { roles: ['reception', 'owner'], href: '/osoblje-prijava.html', name: 'Recepcija', sub: 'Dolazak i no-show za današnje treninge' },
+    { roles: ['instructor', 'owner'], href: '/moji-treninzi.html', name: 'Moji treninzi', sub: 'Tvoji treninzi i tko je prijavljen' },
+  ];
+  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const loginSay = (text) => { $('loginMsg').textContent = text; };
+
+  const showLogin = () => { $('login').hidden = false; $('home').hidden = true; $('logout').hidden = true; $('staffEmail').focus(); };
+
+  const start = async () => {
+    const me = await api('/api/osoblje/ja');
+    if (me.status === 401) return showLogin();
+    if (!me.ok) { showLogin(); return loginSay('Trenutno nije dostupno, pokušaj kasnije.'); }
+    const person = await me.json();
+    $('login').hidden = true;
+    $('home').hidden = false;
+    $('logout').hidden = false;
+    $('who').textContent = person.name;
+    const shown = TILES.filter((t) => t.roles.includes(person.role));
+    $('tiles').replaceChildren(...shown.map((t) => {
+      const a = document.createElement('a');
+      a.className = 'tile';
+      a.href = t.href;
+      const b = document.createElement('b');
+      b.textContent = t.name;
+      const s = document.createElement('span');
+      s.className = 'sub';
+      s.textContent = t.sub;
+      a.append(b, s);
+      return a;
+    }));
+    if (!shown.length) $('err').textContent = 'Ovaj račun nema stranicu za prijavu.';
+    $('title').focus();
+  };
+
+  $('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginSay('');
+    const r = await api('/api/staff-login', 'POST', { email: $('staffEmail').value, password: $('staffPassword').value });
+    if (r.status === 200) { $('staffPassword').value = ''; return start(); }
+    loginSay(r.status === 429 ? 'Previše pokušaja. Pokušaj ponovno za 15 minuta.' : r.status === 503 ? 'Trenutno nije dostupno, pokušaj kasnije.' : 'Pogrešan email ili lozinka.');
+  });
+
+  $('logout').addEventListener('click', async () => { await api('/api/osoblje/odjava', 'POST', {}); $('tiles').replaceChildren(); $('err').textContent = ''; loginSay(''); showLogin(); });
+
+  start();
+})();
+</script>
+</body>
+</html>

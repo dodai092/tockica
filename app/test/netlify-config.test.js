@@ -19,6 +19,13 @@ test('/prijava and /en/prijava are rewritten (not redirected) to prijava.html', 
   }
 });
 
+test('/osoblje, the one staff address, is rewritten to the staff home', () => {
+  const block = rule('/osoblje');
+  assert.ok(block, 'a rule for /osoblje');
+  assert.match(block, /to\s*=\s*"\/osoblje\.html"/);
+  assert.match(block, /status\s*=\s*200/);
+});
+
 test('the site is published from site/dist and the API from the app function', () => {
   assert.match(toml, /publish\s*=\s*"site\/dist"/);
   assert.match(toml, /functions\s*=\s*"app\/server\/functions"/);
