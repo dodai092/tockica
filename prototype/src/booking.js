@@ -52,12 +52,26 @@ export class AlreadyBookedError extends Error {
   }
 }
 
+export class NotCancellableError extends Error {
+  constructor(bookingId, why) {
+    super(`Booking ${bookingId} cannot be cancelled: ${why}`);
+    this.name = 'NotCancellableError';
+  }
+}
+
+// A place is held until it is cancelled: booked, checked in and no-show all keep the bike (the same rule as the
+// database's unique index and the public schedule).
+const holdsPlace = (b) => b.status !== 'cancelled' && b.status !== 'late_cancel';
+
 export function takenBikes(store, classId) {
   return store.bookings
-    .filter((b) => b.classId === classId && b.status === 'booked')
+    .filter((b) => b.classId === classId && holdsPlace(b))
     .map((b) => b.bikeNo)
     .sort((a, b) => a - b);
 }
+
+const hasBike = (store, classId, accountId) =>
+  store.bookings.some((b) => b.classId === classId && b.accountId === accountId && holdsPlace(b));
 
 export function bookBike(store, { classId, bikeNo, accountId, guestName = null, now }) {
   // The studio day booking opens, a setting. The schedule can be seen before it, a bike cannot be taken.
@@ -69,6 +83,8 @@ export function bookBike(store, { classId, bikeNo, accountId, guestName = null, 
   if (!Number.isInteger(bikeNo) || bikeNo < 1 || bikeNo > session.bikeCount) {
     throw new BikeOutOfRangeError(bikeNo);
   }
+  // The app allows one bike per account in a class for now (Antun, 2026-11-25). Unset means no limit.
+  if (store.settings.maxBikesPerClass === 1 && hasBike(store, classId, accountId)) throw new AlreadyBookedError(classId);
   if (takenBikes(store, classId).includes(bikeNo)) throw new BikeTakenError(bikeNo);
 
   // Spend last: a rejected booking must never cost a credit.
@@ -110,8 +126,9 @@ function findBooking(store, bookingId) {
 // Cancelling 6 hours or more before the class returns the credit. Later is a late cancel.
 export function cancelBooking(store, bookingId, now) {
   const booking = findBooking(store, bookingId);
-  if (booking.status !== 'booked') throw new Error(`Booking ${bookingId} is ${booking.status}`);
+  if (booking.status !== 'booked') throw new NotCancellableError(bookingId, `it is ${booking.status}`);
   const session = store.classes.find((c) => c.id === booking.classId);
+  if (now.getTime() >= Date.parse(session.startsAt)) throw new NotCancellableError(bookingId, 'the class has started');
 
   if (Date.parse(session.startsAt) - now.getTime() >= CANCEL_CUTOFF_MS) {
     booking.status = 'cancelled';
@@ -137,11 +154,9 @@ export function markNoShow(store, bookingId) {
 
 export function joinWaitlist(store, { classId, accountId, now }) {
   const session = store.classes.find((c) => c.id === classId);
+  if (!session || !isBookable(session, now)) throw new NotBookableError(classId);
   if (takenBikes(store, classId).length < session.bikeCount) throw new NotFullError(classId);
-  const hasBike = store.bookings.some(
-    (b) => b.classId === classId && b.accountId === accountId && b.status === 'booked',
-  );
-  if (hasBike) throw new AlreadyBookedError(classId);
+  if (hasBike(store, classId, accountId)) throw new AlreadyBookedError(classId);
 
   const existing = store.waitlist.find((w) => w.classId === classId && w.accountId === accountId);
   if (existing) return existing;

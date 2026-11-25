@@ -49,6 +49,12 @@ export async function runInStore(db, scope, fn) {
     const email = store.accounts[0]?.email.trim().toLowerCase();
     if (email) store.legacyPacks = await q('select * from legacy_packs where email = $1 and claimed_by is null for update', [email]);
   }
+  if (scope.classId) {
+    // Whoever waits for this class gets a mail when a bike is freed, so their addresses are needed too. After the
+    // scope's own account, which stays accounts[0].
+    const waiting = await q('select a.* from accounts a join waitlist w on w.account_id = a.id where w.class_id = $1 and a.id is distinct from $2 order by w.created_at, a.id', [scope.classId, scope.accountId ?? null]);
+    store.accounts.push(...waiting);
+  }
   store.packs = await q('select id, name, classes, valid_days from packs');
   store.instructors = (await q('select id, full_name from instructors')).map((i) => ({ id: i.id, name: i.fullName }));
   // The opening day is a plain studio date. Read as text so no time zone can move it.
@@ -60,6 +66,7 @@ export async function runInStore(db, scope, fn) {
     returnedCreditDays: s.returnedCreditDays,
     credits: s.creditsEnabled,
     bookingOpensOn: s.opens,
+    maxBikesPerClass: 1, // Antun, 2026-11-25: one bike per account in a class for now.
   };
   store.waiverText = { version: s.termsVersion, text: '' };
 

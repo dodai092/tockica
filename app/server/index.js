@@ -9,6 +9,7 @@ import { getStaffSession } from './staff-session.js';
 import { staffLoginHandler, staffLogoutHandler, staffMeHandler } from './staff-routes.js';
 import { staffPasswordLinkHandler, staffPasswordHandler } from './staff-password-routes.js';
 import { staffAccessHandler, staffAccessEditHandler, staffAccessLinkHandler } from './staff-access-routes.js';
+import { bookingsHandler, cancelHandler, waitlistJoinHandler, waitlistLeaveHandler } from './booking-routes.js';
 import { checkinListHandler, rosterHandler, statusHandler, trainerClassesHandler, trainerRosterHandler } from './checkin-routes.js';
 import { handleHealth } from './health.js';
 import { scheduleHandler } from './public.js';
@@ -56,6 +57,10 @@ export function createRoute({ pool = getPool, auth = envAuth(process.env), now, 
   r.staff('/api/osoblje/pristup/link', ['owner'], use(staffAccessLinkHandler, { needsAuth: true }));
   r.customer('/api/logout', use(logoutHandler));
   r.customer('/api/me', use(meHandler));
+  r.customer('/api/bookings', use(bookingsHandler));
+  r.customer('/api/bookings/cancel', use(cancelHandler));
+  r.customer('/api/waitlist', use(waitlistJoinHandler));
+  r.customer('/api/waitlist/leave', use(waitlistLeaveHandler));
   return (req) => r.handle(req);
 }
 

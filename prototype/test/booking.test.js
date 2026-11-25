@@ -20,6 +20,7 @@ import {
   BookingNotOpenError,
   NotFullError,
   AlreadyBookedError,
+  NotCancellableError,
 } from '../src/booking.js';
 import { returnCredit } from '../src/ledger.js';
 
@@ -124,7 +125,7 @@ test('booking a class that is not yet bookable is rejected', () => {
   );
 });
 
-test('takenBikes lists only bikes with a booked status', () => {
+test('takenBikes lists the bikes taken in a class, in order', () => {
   const { store, classId } = setup();
   bookBike(store, { classId, bikeNo: 2, accountId: 'acc_test1', now: NOW });
   bookBike(store, { classId, bikeNo: 11, accountId: 'acc_test2', now: NOW });
@@ -347,4 +348,82 @@ test('without an opening day set, booking is not held back', () => {
   const { store, classId } = setup();
   assert.equal(store.settings.bookingOpensOn, undefined);
   bookBike(store, { classId, bikeNo: 3, accountId: 'acc_test1', now: NOW });
+});
+
+test('a class that has started cannot be cancelled by its rider, and nothing changes', () => {
+  const { store, classId } = setup();
+  const booking = bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+  const left = balance(store, 'acc_test1', NOW);
+  store.waitlist.push({ id: 'wl_seed', classId, accountId: 'acc_test2', createdAt: NOW.toISOString() });
+  store.outbox = [];
+  for (const late of [0, 60 * 1000, 24 * 60 * 60 * 1000]) {
+    assert.throws(() => cancelBooking(store, booking.id, new Date(startOf(store, classId) + late)), NotCancellableError);
+  }
+  assert.equal(booking.status, 'booked');
+  assert.equal(balance(store, 'acc_test1', NOW), left);
+  assert.equal(store.outbox.length, 0);
+  assert.equal(cancelBooking(store, booking.id, new Date(startOf(store, classId) - 60 * 1000)).status, 'late_cancel');
+});
+
+test('only a booked place can be cancelled', () => {
+  const { store, classId } = setup();
+  const booking = bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+  for (const status of ['attended', 'no_show', 'cancelled', 'late_cancel']) {
+    booking.status = status;
+    assert.throws(() => cancelBooking(store, booking.id, NOW), NotCancellableError, status);
+    assert.equal(booking.status, status);
+  }
+});
+
+test('the waitlist of a missing, cancelled, unreleased or started class cannot be joined', () => {
+  const { store, classId } = setup();
+  fillClass(store, classId);
+  const join = (id, now) => () => joinWaitlist(store, { classId: id, accountId: 'acc_test1', now });
+  assert.throws(join('cls_nope', NOW), NotBookableError);
+  assert.throws(join(classId, new Date('2026-10-26T12:00:00Z')), NotBookableError);
+  assert.throws(join(classId, new Date(startOf(store, classId))), NotBookableError);
+  store.classes.find((c) => c.id === classId).cancelled = true;
+  assert.throws(join(classId, NOW), NotBookableError);
+  assert.equal(store.waitlist.length, 0);
+});
+
+test('with a limit of one bike, a second bike in the same class is refused and costs nothing', () => {
+  const { store, classId } = setup();
+  store.settings.maxBikesPerClass = 1;
+  const first = bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+  const left = balance(store, 'acc_test1', NOW);
+  for (const bikeNo of [4, 5]) {
+    assert.throws(() => bookBike(store, { classId, bikeNo, accountId: 'acc_test1', now: NOW }), AlreadyBookedError);
+  }
+  assert.equal(balance(store, 'acc_test1', NOW), left);
+  assert.equal(store.bookings.length, 1);
+  bookBike(store, { classId, bikeNo: 5, accountId: 'acc_test2', now: NOW });
+  const other = store.classes.find((c) => c.id !== classId);
+  bookBike(store, { classId: other.id, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+  cancelBooking(store, first.id, NOW);
+  bookBike(store, { classId, bikeNo: 6, accountId: 'acc_test1', now: NOW });
+});
+
+test('without a limit one account may take several bikes', () => {
+  const { store, classId } = setup();
+  bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+  bookBike(store, { classId, bikeNo: 5, accountId: 'acc_test1', now: NOW });
+  assert.equal(store.bookings.length, 2);
+});
+
+// Reception can check a rider in before the class starts, while booking is still open.
+test('a checked-in or no-show place still holds its bike: no second bike, and a full class stays full', () => {
+  for (const status of ['attended', 'no_show']) {
+    const { store, classId } = setup();
+    store.settings.maxBikesPerClass = 1;
+    const mine = bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test1', now: NOW });
+    mine.status = status;
+    assert.deepEqual(takenBikes(store, classId), [4], status);
+    assert.throws(() => bookBike(store, { classId, bikeNo: 5, accountId: 'acc_test1', now: NOW }), AlreadyBookedError, status);
+    assert.throws(() => bookBike(store, { classId, bikeNo: 4, accountId: 'acc_test2', now: NOW }), BikeTakenError, status);
+    fillClass(store, classId);
+    store.bookings = store.bookings.filter((b) => !(b.accountId === 'acc_fill' && b.bikeNo === 4));
+    joinWaitlist(store, { classId, accountId: 'acc_test2', now: NOW });
+    assert.throws(() => joinWaitlist(store, { classId, accountId: 'acc_test1', now: NOW }), AlreadyBookedError, status);
+  }
 });
