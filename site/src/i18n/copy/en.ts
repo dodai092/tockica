@@ -36,7 +36,7 @@ export const en: Copy = {
     about: { heading: 'About the studio', line: 'The first and only rhythm spin studio in the heart of Zagreb.' },
     rooms: {
       heading: 'Rooms',
-      riders: { name: 'Riders Room', text: 'Our signature 50-minute rhythm spin class. 20 bikes.' },
+      riders: { name: 'Riders Room', text: 'Our signature 50-minute rhythm spin class.' },
       sculpt: { name: 'Sculpt Room', text: 'A room independent trainers rent for their own clients.' },
       more: 'About the Sculpt Room',
     },
@@ -153,7 +153,7 @@ export const en: Copy = {
     priceLine: '30 DAYS OF UNLIMITED RIDES',
     price: '€99',
     first: 'First 30 buyers by 31 December.',
-    room: 'Spin classes in the Riders Room. 50 minutes, 20 bikes.',
+    room: 'Spin classes in the Riders Room.',
     detailsHeading: 'Offer terms',
     deadline: 'Join the waitlist by 31 December to unlock it.',
     terms:
@@ -222,6 +222,7 @@ export const en: Copy = {
       scarce: { one: 'Only {n} left', few: 'Only {n} left', other: 'Only {n} left' },
     },
   },
+  credits: { one: 'credit', many: 'credits', unlimited: 'unlimited' },
   login: {
     title: 'Log in',
     intro: 'Log in with your email and password.',

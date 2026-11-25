@@ -52,7 +52,7 @@ const linkClass = 'hover:text-link dark:hover:text-white px-4 py-3 flex items-ce
            and the cluster inside it are `contents`, so logo, nav, controls and Book become one flex row. The nav
            has auto margins, so it sits in the space between the logo and the controls, at least 24px from each. */
       }
-      <div class="flex items-center justify-between bar:contents" data-bar-row>
+      <div class="relative flex items-center justify-between bar:contents" data-bar-row>
         <a class="flex items-center bar:order-1 bar:mr-6" href={pathFor('home', lang)}>
           <Logo />
         </a>
@@ -61,6 +61,37 @@ const linkClass = 'hover:text-link dark:hover:text-white px-4 py-3 flex items-ce
             class:list={['flex items-center gap-2 bar:order-3', minimal ? 'bar:ml-auto' : 'bar:ml-6']}
             data-bar-controls
           >
+            {
+              /* The signed-in rider's credits, filled in by LoginSheet. Hidden unless /api/me carries them. A dot and the
+                number, or the unlimited sign. The words are for screen readers only. Phones: the middle of the bar. */
+              !minimal && (
+                <p
+                  class="inline-flex items-center gap-2 whitespace-nowrap font-heading text-xl font-extrabold leading-none tabular-nums max-bar:absolute max-bar:left-1/2 max-bar:top-1/2 max-bar:-translate-x-1/2 max-bar:-translate-y-1/2 bar:mr-2"
+                  data-credits
+                  data-one={copy.credits.one}
+                  data-many={copy.credits.many}
+                  data-unlimited={copy.credits.unlimited}
+                  hidden
+                >
+                  <span class="h-2.5 w-2.5 flex-none rounded-full bg-primary" aria-hidden="true" />
+                  <span class="empty:hidden" data-credits-number aria-hidden="true" />
+                  <svg
+                    data-credits-infinity
+                    class="h-[0.8125rem] w-6"
+                    viewBox="0 0 24 13"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 6.5C10 3.6 8.4 1.8 6.2 1.8a4.7 4.7 0 0 0 0 9.4c2.2 0 3.8-1.8 5.8-4.7s3.6-4.7 5.8-4.7a4.7 4.7 0 0 1 0 9.4c-2.2 0-3.8-1.8-5.8-4.7Z" />
+                  </svg>
+                  <span class="sr-only" data-credits-spoken />
+                </p>
+              )
+            }
             <a
               class="text-muted hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-gray-200 dark:focus-visible:ring-gray-700 rounded-lg text-sm font-semibold px-2.5 py-2.5 inline-flex items-center"
               href={twin ? twin[other] : pathFor(route, other)}

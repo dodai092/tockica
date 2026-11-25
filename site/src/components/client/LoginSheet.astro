@@ -102,6 +102,23 @@ const view = 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1r
     });
   }
 
+  // The header's credit number. Nothing shows without credits in /api/me (switched off, or signed out).
+  function showCredits(user: Me | null) {
+    const el = document.querySelector<HTMLElement>('[data-credits]');
+    if (!el) return;
+    const credits = user?.credits;
+    el.hidden = credits === undefined;
+    if (credits === undefined) return;
+    const unlimited = credits === 'unlimited';
+    el.querySelector('[data-credits-number]')!.textContent = unlimited ? '' : String(credits);
+    el.querySelector('[data-credits-infinity]')!.toggleAttribute('hidden', !unlimited);
+    // Croatian says "1 kredit" and "21 kredit", and "kredita" for everything else. The plural rules know which.
+    const one = new Intl.PluralRules(document.documentElement.lang).select(Number(credits)) === 'one';
+    el.querySelector('[data-credits-spoken]')!.textContent = unlimited
+      ? el.dataset.unlimited!
+      : `${credits} ${one ? el.dataset.one : el.dataset.many}`;
+  }
+
   function open() {
     const sheet = sheetEl();
     if (!sheet || sheet.open) return;
@@ -119,7 +136,10 @@ const view = 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1r
   });
 
   // Every change (a login, a logout, or the flag being found stale) updates the header label, and ends the sheet's job.
+  // The header is rebuilt on every client-side navigation, so the number is filled in again.
+  document.addEventListener('astro:page-load', () => showCredits(currentUser()));
   onLoginChange((user) => {
+    showCredits(user);
     const sheet = sheetEl();
     if (!sheet) return;
     const label = user ? sheet.dataset.labelAccount : sheet.dataset.labelLogin;

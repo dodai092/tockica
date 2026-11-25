@@ -54,12 +54,20 @@ test('fetchMe returns the account, null when signed out, and unknown when the ap
   );
 });
 
-test('fetchMe sends the cookie with the request and only reads the three profile fields', async () => {
+test('fetchMe sends the cookie with the request and reads no unknown field', async () => {
   const { fn, calls } = recorder(200, { firstName: 'Ana', lastName: 'Horvat', email: 'a@b.hr', secret: 'x' });
   const me = await fetchMe(fn);
   assert.equal(calls[0].url, '/api/me');
   assert.equal(calls[0].init.credentials, 'same-origin');
   assert.deepEqual(Object.keys(me).sort(), ['email', 'firstName', 'lastName']);
+});
+
+test('fetchMe passes on credits, a number or unlimited, and leaves the field out for anything else', async () => {
+  const me = { firstName: 'Ana', lastName: 'Horvat', email: 'a@b.hr' };
+  for (const credits of [0, 3, 'unlimited'])
+    assert.deepEqual(await fetchMe(reply(200, { ...me, credits })), { ...me, credits });
+  for (const credits of [undefined, null, -1, 1.5, '3'])
+    assert.deepEqual(await fetchMe(reply(200, { ...me, credits })), me, String(credits));
 });
 
 test('logout posts to /api/logout and says whether the app confirmed it', async () => {

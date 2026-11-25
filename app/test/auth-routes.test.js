@@ -200,6 +200,46 @@ test('/api/me needs the cookie, answers the signed-in account and slides the coo
   assert.match(res.headers.get('set-cookie'), /Max-Age=2592000/);
 });
 
+test('/api/me carries credits only while they are switched on: the usable balance, 0, or unlimited on a paid pass', async () => {
+  const route = app();
+  const cookie = await signedUp(route);
+  const { id } = (await db.query('select id from accounts')).rows[0];
+  const credits = async () => (await (await get(route, '/api/me', cookie)).json()).credits;
+  const lot = (lotId, expires, remaining) =>
+    db.query(`insert into lots (id, account_id, expires_at, remaining, origin) values ($1, $2, $3, $4, 'legacy')`, [lotId, id, expires, remaining]);
+  const pass = (passId, paidOn) =>
+    db.query(`insert into passes (id, account_id, valid_from, valid_to, price_cents, paid_on) values ($1, $2, '2027-01-04', '2027-02-03', 9900, $3)`, [passId, id, paidOn]);
+  try {
+    await lot('lot_1', '2027-03-01T00:00:00Z', 3);
+    await pass('ps_1', '2027-01-04');
+    assert.equal(await credits(), undefined, 'credits off: no field, whatever the account holds');
+
+    await db.exec('update settings set credits_enabled = true');
+    await db.exec('delete from passes');
+    await lot('lot_2', '2027-03-01T00:00:00Z', 2);
+    await lot('lot_old', '2026-12-01T00:00:00Z', 7);
+    assert.equal(await credits(), 5, 'the usable lots, not the expired one');
+
+    await db.exec('delete from lots');
+    assert.equal(await credits(), 0);
+
+    await pass('ps_2', null);
+    clock = new Date('2027-01-04T08:00:00Z');
+    assert.equal(await credits(), 0, 'an unpaid pass is not unlimited');
+    await db.exec("update passes set paid_on = '2027-01-04'");
+    assert.equal(await credits(), 'unlimited', 'the first day');
+    // Studio days (Europe/Zagreb), both ends included.
+    for (const [at, expected] of [['2027-01-03T22:59:00Z', 0], ['2027-02-03T22:59:00Z', 'unlimited'], ['2027-02-03T23:01:00Z', 0]]) {
+      await db.exec('delete from sessions; delete from auth_attempts');
+      clock = new Date(at);
+      const again = await loginCookie(route, form.password);
+      assert.equal((await (await get(route, '/api/me', again)).json()).credits, expected, at);
+    }
+  } finally {
+    await db.exec('update settings set credits_enabled = false; delete from passes; delete from lots');
+  }
+});
+
 test('the public schedule feed does not slide the session', async () => {
   const route = app();
   const cookie = await signedUp(route);

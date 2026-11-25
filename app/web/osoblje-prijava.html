@@ -40,19 +40,17 @@ input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;co
 .cls.past b,.cls.past{color:var(--muted)}
 .top{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;justify-content:space-between;margin:0 0 8px}
 .sub{font-size:14px;color:var(--muted)}
-.legend{display:flex;gap:16px;margin:0 0 12px;font-size:14px;color:var(--muted)}
-.legend span{display:inline-flex;gap:6px;align-items:center}
-svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.legend svg{width:18px;height:18px;stroke:var(--ink)}
+.colhead{display:flex;justify-content:flex-end;margin:0;padding:0 12px 4px;font-size:13px;color:var(--muted)}
+.colhead span{width:64px;text-align:center}
+svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 ul{list-style:none;margin:0;padding:0}
 .row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:8px 12px;margin:0 0 8px;background:var(--card);border-radius:12px}
 .bike{font:800 18px Montserrat,system-ui,sans-serif;color:var(--ink);text-align:center}
 .nm{color:var(--ink);font-weight:500;overflow-wrap:anywhere}
-.acts{display:flex;gap:8px;align-items:center}
-.ib{width:44px;height:44px;padding:0;display:inline-grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink)}
-.ib:hover{border-color:var(--ink)}
-.ib[aria-pressed=true]{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
-.ib[aria-pressed=true]:hover{border-color:var(--btn)}
+.tick{width:64px;height:48px;padding:0;display:grid;place-items:center;background:transparent;border:0;border-radius:8px}
+.box{width:32px;height:32px;display:grid;place-items:center;border:2px solid var(--line);border-radius:8px;color:transparent}
+.tick:hover .box{border-color:var(--ink)}
+.tick[aria-checked=true] .box{background:var(--btn);border-color:var(--btn);color:var(--btn-text)}
 @media (max-width:540px){.row{grid-template-columns:36px 1fr auto}}
 [hidden]{display:none!important}
 </style>
@@ -79,11 +77,8 @@ ul{list-style:none;margin:0;padding:0}
   <div id="strip" class="strip" role="group" aria-label="Današnji treninzi"></div>
   <div id="detail" hidden>
     <div class="top"><h2 id="classTitle"></h2><div id="counts" class="sub"></div></div>
-    <p class="legend">
-      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Dolazak</span>
-      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>No-show</span>
-    </p>
     <p id="err" class="slot" role="alert"></p>
+    <p class="colhead" aria-hidden="true"><span>Dolazak</span></p>
     <ul id="riders"></ul>
   </div>
 </section>
@@ -95,7 +90,6 @@ ul{list-style:none;margin:0;padding:0}
   const $ = (id) => document.getElementById(id);
   const WORD = { booked: 'Rezervirano', attended: 'Došao', no_show: 'No-show' };
   const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-  const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   const T = {
     wrong: 'Pogrešan email ili lozinka.', later: 'Trenutno nije dostupno, pokušaj kasnije.', tooMany: 'Previše pokušaja. Pokušaj ponovno za 15 minuta.',
     noAccess: 'Ovaj račun nema pristup recepciji.', notSaved: 'Promjena nije spremljena. Popis je osvježen.', loadFail: 'Popis se nije učitao. Pokušaj ponovno.',
@@ -119,20 +113,19 @@ ul{list-style:none;margin:0;padding:0}
   const showScreen = () => { $('login').hidden = true; $('screen').hidden = false; $('logout').hidden = false; };
   const lostSession = () => { loginSay(''); showLogin(); };
 
+  const hasEnded = () => new Date(current.startsAt).getTime() + current.durationMin * 60000 <= Date.now();
+
+  // While the class runs an unchecked rider is waiting, after it they did not come. Read from the clock, not from
+  // each status, so a page left open past the end never says nobody missed the class.
   const counts = () => {
-    const n = (s) => riders.filter((r) => r.status === s).length;
-    $('counts').textContent = `${n('attended')} došlo, ${n('no_show')} nije došlo, ${n('booked')} čeka`;
+    const came = riders.filter((r) => r.status === 'attended').length;
+    $('counts').textContent = `${came} došlo, ${riders.length - came} ${hasEnded() ? 'nije došlo' : 'čeka'}`;
   };
 
-  const rowFor = (r) => {
-    const who = `bicikl ${r.bikeNo}, ${r.name}`;
-    return el('li', { class: 'row', 'data-id': r.bookingId },
-      el('span', { class: 'bike' }, String(r.bikeNo)),
-      el('span', { class: 'nm' }, r.name),
-      el('div', { class: 'acts' },
-        el('button', { type: 'button', class: 'ib', 'data-set': 'attended', 'aria-pressed': String(r.status === 'attended'), 'aria-label': `Dolazak, ${who}`, html: CHECK }),
-        el('button', { type: 'button', class: 'ib', 'data-set': 'no_show', 'aria-pressed': String(r.status === 'no_show'), 'aria-label': `No-show, ${who}`, html: CROSS })));
-  };
+  const rowFor = (r) => el('li', { class: 'row', 'data-id': r.bookingId },
+    el('span', { class: 'bike' }, String(r.bikeNo)),
+    el('span', { class: 'nm' }, r.name),
+    el('button', { type: 'button', class: 'tick', role: 'checkbox', 'aria-checked': String(r.status === 'attended'), 'aria-label': `Dolazak, bicikl ${r.bikeNo}, ${r.name}`, html: `<span class="box">${CHECK}</span>` }));
 
   // Redraws the rows only. The class strip keeps its buttons, so focus stays where it is.
   const drawRiders = () => {
@@ -203,14 +196,11 @@ ul{list-style:none;margin:0;padding:0}
   $('strip').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) pick(classes.find((c) => c.id === b.dataset.id)); });
 
   $('riders').addEventListener('click', async (e) => {
-    const b = e.target.closest('button[data-set]');
+    const b = e.target.closest('button.tick');
     if (!b) return;
     const li = b.closest('li'), rider = riders.find((r) => r.bookingId === li.dataset.id);
-    // Tapping the filled button goes back to waiting, but only while the class runs. Once it has ended the sweep
-    // has decided, and the status changes only by tapping the other button.
-    const ended = new Date(current.startsAt).getTime() + current.durationMin * 60000 <= Date.now();
-    const set = rider.status === b.dataset.set ? 'booked' : b.dataset.set;
-    if (set === 'booked' && ended) return;
+    // Unchecking goes back to waiting while the class runs, and to no-show once it has ended.
+    const set = rider.status !== 'attended' ? 'attended' : hasEnded() ? 'no_show' : 'booked';
     const r = await api('/api/osoblje/prijava/status', 'POST', { bookingId: rider.bookingId, status: set });
     if (r.status === 401) return lostSession();
     if (!r.ok) { await loadRoster(); return fail(T.notSaved); }
@@ -219,8 +209,8 @@ ul{list-style:none;margin:0;padding:0}
     rider.checkedInAt = out.checkedInAt;
     fail('');
     announce(`${rider.name}: ${WORD[rider.status]}`);
-    // The buttons stay, so only their pressed state changes and focus stays on the button just pressed.
-    for (const btn of li.querySelectorAll('[data-set]')) btn.setAttribute('aria-pressed', String(btn.dataset.set === rider.status));
+    // The row stays, so only the checked state changes and focus stays on the field just used.
+    b.setAttribute('aria-checked', String(rider.status === 'attended'));
     counts();
   });
 

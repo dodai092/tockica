@@ -4,7 +4,8 @@
 // request on page load (the Netlify free plan has a hard cap on function credits).
 import { withBase } from './base.ts';
 
-export type Me = { firstName: string; lastName: string; email: string };
+// `credits` is there only while the app has credits switched on: the usable balance, or 'unlimited' on an unlimited pass.
+export type Me = { firstName: string; lastName: string; email: string; credits?: number | 'unlimited' };
 export type LoginResult = { ok: true } | { ok: false; reason: 'credentials' | 'no-account' | 'unavailable' };
 
 type Send = (url: string, init?: RequestInit) => Promise<Pick<Response, 'status' | 'json'>>;
@@ -35,8 +36,9 @@ export async function fetchMe(send: Send = fetch): Promise<Me | null | 'unknown'
     const r = await send(withBase('/api/me'), { credentials: 'same-origin' });
     if (r.status === 401) return null;
     if (r.status !== 200) return 'unknown';
-    const { firstName, lastName, email } = (await r.json()) as Me;
-    return { firstName, lastName, email };
+    const { firstName, lastName, email, credits } = (await r.json()) as Me;
+    const known = credits === 'unlimited' || (Number.isInteger(credits) && (credits as number) >= 0);
+    return { firstName, lastName, email, ...(known && { credits }) };
   } catch {
     return 'unknown';
   }

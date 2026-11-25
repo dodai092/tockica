@@ -1,20 +1,24 @@
 ---
-// Address and opening hours, for the waitlist page while there is no full homepage. Kontakt has the rest.
+// Address and opening hours as a card: on the waitlist page, and on Kontakt (`stacked`, one column beside the form).
 import { contact } from '~/data/contact';
 import { getCopy } from '~/i18n';
 import type { Lang } from '~/i18n';
 
 interface Props {
   lang: Lang;
+  stacked?: boolean;
 }
 
-const { lang } = Astro.props;
+const { lang, stacked = false } = Astro.props;
 const t = getCopy(lang).waitlist;
 ---
 
-<section data-section="hours" class="mx-auto max-w-3xl px-4 sm:px-6 py-12 md:py-16">
+<section data-section="hours" class:list={[!stacked && 'mx-auto max-w-3xl px-4 sm:px-6 py-12 md:py-16']}>
   <div
-    class="rounded-(--aw-radius-card) border border-white/10 bg-accent p-6 sm:p-8 md:grid md:grid-cols-[1fr_1.25fr] md:items-center md:gap-14"
+    class:list={[
+      'rounded-(--aw-radius-card) border border-white/10 bg-accent p-6 sm:p-8',
+      !stacked && 'md:grid md:grid-cols-[1fr_1.25fr] md:items-center md:gap-14',
+    ]}
   >
     <div>
       <h2 class="text-3xl font-extrabold leading-tight text-balance text-heading">{t.hoursHeading}</h2>
@@ -37,10 +41,15 @@ const t = getCopy(lang).waitlist;
         <span>{contact.address}</span>
       </p>
     </div>
-    <ul class="mt-6 md:mt-0" data-contact="hours">
+    <ul class:list={['mt-6', !stacked && 'md:mt-0']} data-contact="hours">
       {
         contact.hours.map((h) => (
-          <li class="flex justify-between gap-4 border-t border-gray-200 dark:border-slate-600 py-3 tabular-nums text-default md:first:border-t-0 md:first:pt-0">
+          <li
+            class:list={[
+              'flex justify-between gap-4 border-t border-gray-200 dark:border-slate-600 py-3 tabular-nums text-default',
+              !stacked && 'md:first:border-t-0 md:first:pt-0',
+            ]}
+          >
             <span class="font-semibold text-heading">{h.days[lang]}</span>
             <span>{h.time}</span>
           </li>

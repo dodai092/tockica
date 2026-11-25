@@ -50,7 +50,7 @@ beforeEach(async () => {
 
 test('the offer order takes its price from the server, whatever the client sends', async () => {
   const o = await createOrder(db, { accountId: 'acc_1', kind: 'waitlist_offer', amountCents: 1 }, sale);
-  assert.equal(o.amount_cents, 10000);
+  assert.equal(o.amount_cents, 9900);
   assert.equal(o.status, 'pending');
   assert.ok(new Date(o.expires_at) > sale);
 });
@@ -90,7 +90,7 @@ test('a paid callback records the payment, marks the order paid and grants a 30 
   assert.equal(r.duplicate, false);
   assert.equal((await orderState(db, o.id, 'acc_1')).status, 'paid');
   const p = (await db.query(`select valid_from::text as f, valid_to::text as t, price_cents, order_id, paid_on::text as paid from passes`)).rows;
-  assert.deepEqual(p, [{ f: '2027-01-10', t: '2027-02-09', price_cents: 10000, order_id: o.id, paid: '2027-01-10' }]);
+  assert.deepEqual(p, [{ f: '2027-01-10', t: '2027-02-09', price_cents: 9900, order_id: o.id, paid: '2027-01-10' }]);
   assert.equal(await count('payments'), 1);
 });
 
@@ -106,10 +106,10 @@ test('the same callback twice grants once', async () => {
 
 test('a bad signature or a wrong amount is refused, logged, and grants nothing', async () => {
   const o = await createOrder(db, { accountId: 'acc_1', kind: 'waitlist_offer' }, sale);
-  const bad = JSON.stringify({ sig: 'forged', ref: 'PW-9', orderId: o.id, amountCents: 10000 });
+  const bad = JSON.stringify({ sig: 'forged', ref: 'PW-9', orderId: o.id, amountCents: 9900 });
   assert.equal(await code(handleCallback(db, fake, { body: bad }, sale)), 'bad_callback');
   assert.equal(await code(handleCallback(db, fake, { body: cb({ ...o, amount_cents: 100 }) }, sale)), 'amount_mismatch');
-  assert.equal(await code(handleCallback(db, fake, { body: cb({ id: 'or_missing', amount_cents: 10000 }) }, sale)), 'bad_callback');
+  assert.equal(await code(handleCallback(db, fake, { body: cb({ id: 'or_missing', amount_cents: 9900 }) }, sale)), 'bad_callback');
   assert.equal(await count('passes'), 0);
   assert.equal(await count('payments'), 0);
   assert.equal(await count('payment_events'), 3);
@@ -145,7 +145,7 @@ test('a failed payment marks the order failed, grants nothing and lets the accou
 test('a second payment for an order that is already paid is raised, not granted', async () => {
   const o = await createOrder(db, { accountId: 'acc_1', kind: 'waitlist_offer' }, sale);
   await handleCallback(db, fake, { body: cb(o) }, sale);
-  const second = JSON.stringify({ sig: 'ok', ref: 'PW-2', orderId: o.id, amountCents: 10000, status: 'succeeded' });
+  const second = JSON.stringify({ sig: 'ok', ref: 'PW-2', orderId: o.id, amountCents: 9900, status: 'succeeded' });
   assert.equal(await code(handleCallback(db, fake, { body: second }, sale)), 'double_payment');
   assert.equal(await count('passes'), 1);
   assert.equal(await count('payment_events'), 2);

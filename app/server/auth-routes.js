@@ -6,6 +6,7 @@ import { signUp, validateSignup, SignupError, DuplicateEmailError } from './sign
 import { createSession, endSession, endAllSessions, sessionToken } from './session.js';
 import { isBlocked, recordAttempt, clearAttempts, TOO_MANY } from './throttle.js';
 import { endStaffSessionsOfUser } from './staff-session.js';
+import { balance } from '../../prototype/src/ledger.js';
 
 const json = (body, status = 200, headers) => Response.json(body, { status, headers });
 const readJson = (req) => req.json().catch(() => ({}));
@@ -160,9 +161,21 @@ export function logoutHandler({ db, now = () => new Date() }) {
   });
 }
 
-export function meHandler({ db }) {
+// What the header shows: nothing while credits are switched off, 'unlimited' on a paid pass that covers today's studio
+// day, else the usable balance (the ledger's rule).
+async function creditsOf(db, accountId, now) {
+  if (!(await db.query('select credits_enabled from settings')).rows[0].credits_enabled) return undefined;
+  const pass = await db.query(
+    `select 1 from passes where account_id = $1 and paid_on is not null
+        and ($2::timestamptz at time zone 'Europe/Zagreb')::date between valid_from and valid_to`, [accountId, now.toISOString()]);
+  if (pass.rows.length) return 'unlimited';
+  const lots = (await db.query('select account_id, expires_at, remaining from lots where account_id = $1', [accountId])).rows;
+  return balance({ lots: lots.map((l) => ({ accountId: l.account_id, expiresAt: new Date(l.expires_at).toISOString(), remaining: l.remaining })) }, accountId, now);
+}
+
+export function meHandler({ db, now }) {
   return async (_req, session) => {
     const a = (await db.query('select first_name, last_name, email from accounts where id = $1', [session.accountId])).rows[0];
-    return json({ firstName: a.first_name, lastName: a.last_name, email: a.email });
+    return json({ firstName: a.first_name, lastName: a.last_name, email: a.email, credits: await creditsOf(db, session.accountId, now()) });
   };
 }

@@ -35,7 +35,7 @@ export const hr: Copy = {
     about: { heading: 'O studiju', line: 'Prvi i jedini rhythm spin studio u srcu Zagreba.' },
     rooms: {
       heading: 'Prostori',
-      riders: { name: 'Riders Room', text: 'Naš signature 50-minutni rhythm spin. 20 bicikala.' },
+      riders: { name: 'Riders Room', text: 'Naš signature 50-minutni rhythm spin.' },
       sculpt: { name: 'Sculpt Room', text: 'Prostor koji samostalni treneri iznajmljuju za svoje klijente.' },
       more: 'O Sculpt Roomu',
     },
@@ -147,13 +147,13 @@ export const hr: Copy = {
   waitlist: {
     title: 'Lista čekanja',
     description:
-      'Prijavi se na listu čekanja do 31. prosinca i otključaj 30 dana neograničenih vožnji za 99 €. Otvaramo 4. siječnja.',
+      'Prijavi se na listu čekanja do 31. prosinca i otključaj 30 dana neograničenih vožnji za €99. Otvaramo 4. siječnja.',
     heading: 'OTKLJUČAJ NAŠU LAUNCH PONUDU.',
     offer: 'Za sve koji su s nama na početku ovog novog poglavlja. Ovo je za vas.',
     priceLine: '30 DANA NEOGRANIČENIH VOŽNJI',
-    price: '99 €',
+    price: '€99',
     first: 'Prvih 30 kupaca do 31.12.',
-    room: 'Spin treninzi u Riders Roomu. 50 minuta, 20 bicikala.',
+    room: 'Spin treninzi u Riders Roomu.',
     detailsHeading: 'Uvjeti ponude',
     deadline: 'Prijavi se na listu čekanja do 31. prosinca i otključaj ponudu.',
     terms:
@@ -185,7 +185,7 @@ export const hr: Copy = {
       { title: 'Prijavi se', text: 'Do 31. prosinca upiši ime, prezime, e-mail i datum rođenja.' },
       {
         title: 'Otključaj ponudu',
-        text: 'Do 31. prosinca kupi 30 dana neograničenih vožnji za 99 €. Ponuda vrijedi za prvih 30 kupaca.',
+        text: 'Do 31. prosinca kupi 30 dana neograničenih vožnji za €99. Ponuda vrijedi za prvih 30 kupaca.',
       },
       { title: 'Vozi 30 dana', text: 'Tvojih 30 dana počinje 4. siječnja.' },
     ],
@@ -196,7 +196,7 @@ export const hr: Copy = {
   },
   waitlistThanks: {
     title: 'Na listi si',
-    text: 'Hvala na prijavi. Otvaramo 4. siječnja, a ponudu od 99 € možeš kupiti do 31. prosinca.',
+    text: 'Hvala na prijavi. Otvaramo 4. siječnja, a ponudu od €99 možeš kupiti do 31. prosinca.',
     instagram: 'Prati nas na Instagramu',
     pendingMissing: 'kako i kada javljamo da je ponuda otvorena',
     back: 'Natrag na naslovnicu',
@@ -219,6 +219,8 @@ export const hr: Copy = {
       scarce: { one: 'Još {n} slobodan', few: 'Još {n} slobodna', other: 'Još {n} slobodnih' },
     },
   },
+  // Proposed wording, Dunia approves it.
+  credits: { one: 'kredit', many: 'kredita', unlimited: 'neograničeno' },
   login: {
     title: 'Prijava',
     intro: 'Prijavi se emailom i lozinkom.',

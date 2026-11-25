@@ -1,5 +1,5 @@
-// The opening hours card on the waitlist page (home): two columns from the md breakpoint (heading and address left,
-// hours right), stacked on a phone. Reads the built pages, so run `npm run build` first.
+// The opening hours card on the waitlist page (home) and on Kontakt. On the home page it has two columns from the md
+// breakpoint (heading and address left, hours right). On Kontakt it sits beside the form, so it is always stacked. Reads the built pages, so run `npm run build` first.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -20,8 +20,10 @@ test('every hours range in the data has spaces around the hyphen', () => {
 for (const [page, lang, heading] of [
   ['index.html', 'hr', 'Radno vrijeme od 4. siječnja'],
   ['en/index.html', 'en', 'Opening hours from 4 January'],
+  ['kontakt/index.html', 'hr', 'Radno vrijeme od 4. siječnja'],
+  ['en/contact/index.html', 'en', 'Opening hours from 4 January'],
 ]) {
-  test(`${lang}: heading, address and all seven days with their times are there`, async () => {
+  test(`${page}: heading, address and all seven days with their times are there`, async () => {
     const s = await section(page);
     assert.ok(s.includes(heading), 'heading');
     assert.match(s, new RegExp(`data-contact="address"[^>]*>[\\s\\S]*?${contact.address}`));
@@ -33,15 +35,27 @@ for (const [page, lang, heading] of [
     });
   });
 
-  test(`${lang}: the heading is balanced so it does not leave one word on its own line`, async () => {
+  test(`${page}: the heading is balanced so it does not leave one word on its own line`, async () => {
     const s = await section(page);
     assert.match(s, /<h2[^>]*class="[^"]*\btext-balance\b/);
   });
 
-  test(`${lang}: the address icon is hidden from screen readers and the address text stays outside it`, async () => {
+  test(`${page}: the address icon is hidden from screen readers and the address text stays outside it`, async () => {
     const s = await section(page);
     const p = s.match(/<p[^>]*data-contact="address"[\s\S]*?<\/p>/)[0];
     assert.match(p, /<svg[^>]*aria-hidden="true"/);
     assert.ok(p.replace(/<svg[\s\S]*?<\/svg>/, '').includes(contact.address));
+  });
+}
+
+for (const page of ['kontakt/index.html', 'en/contact/index.html']) {
+  test(`${page}: the card is stacked, the address and hours appear once, e-mail and phone stay beside them`, async () => {
+    const html = await readFile(new URL(`../dist/${page}`, import.meta.url), 'utf8');
+    const main = html.match(/<main[\s\S]*?<\/main>/)[0];
+    assert.doesNotMatch(await section(page), /md:grid-cols|md:first:/);
+    assert.equal(main.split(contact.address).length - 1, 1);
+    assert.equal((main.match(/data-contact="hours"/g) ?? []).length, 1);
+    assert.match(main, /data-contact="email"[\s\S]*?mailto:info@tockicanai\.hr/);
+    assert.match(main, /data-contact="phone"/);
   });
 }

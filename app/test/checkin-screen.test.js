@@ -55,15 +55,16 @@ test('it is built for keyboard and screen readers: landmark, labelled inputs, na
   assert.doesNotMatch(html, /<div[^>]*onclick|<span[^>]*onclick/i);
 });
 
-test('both buttons stay on every row and show the press with aria-pressed, in the glossary words: no undo link, no chip', () => {
-  assert.match(html, /aria-pressed/);
-  assert.match(html, /No-show, \$\{who\}/);
-  assert.match(html, /Dolazak, \$\{who\}/);
-  assert.doesNotMatch(html, /Poništi|Nije došao|class="undo"|class: 'undo'|\.chip/);
-  assert.match(html, /\.ib\[aria-pressed=true\]/);
+test('one check field per rider, a checkbox named in the glossary word: no No-show button, no legend, no undo link, no chip', () => {
+  assert.match(html, /role: 'checkbox'/);
+  assert.match(html, /'aria-checked'/);
+  assert.match(html, /Dolazak, bicikl \$\{r\.bikeNo\}, \$\{r\.name\}/);
+  assert.equal([...html.matchAll(/el\('button', \{[^}]*class: 'tick'/g)].length, 1);
+  assert.doesNotMatch(html, /data-set|aria-pressed': String\(r|No-show, |class="legend"|const CROSS|Poništi|Nije došao|class="undo"|class: 'undo'|\.chip/);
+  assert.match(html, /\.tick\[aria-checked=true\] \.box\{/);
 });
 
-test('messages never move the page: no message above the heading, errors in a reserved alert line below the legend, success announced in a hidden live region', () => {
+test('messages never move the page: no message above the heading, errors in a reserved alert line below the class heading, success announced in a hidden live region', () => {
   assert.doesNotMatch(html, /id="msg"/);
   assert.match(html, /<p id="err" class="slot" role="alert"><\/p>/);
   assert.match(html, /<p id="loginMsg" class="slot" role="alert"><\/p>/);

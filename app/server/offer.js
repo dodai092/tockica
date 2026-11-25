@@ -5,5 +5,5 @@ export const OFFER = {
   saleFrom: '2027-01-04', // buy from this day
   saleTo: '2027-01-31', // to this day, including it
   days: 30, // valid this many days from the day of purchase
-  priceCents: 10000,
+  priceCents: 9900,
 };

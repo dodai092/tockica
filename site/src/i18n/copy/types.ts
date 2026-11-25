@@ -167,6 +167,8 @@ export type Copy = {
     logout: string;
     accountTitle: string;
   };
+  /** Read out after the header's credit number. The screen shows only the number or the unlimited sign. */
+  credits: { one: string; many: string; unlimited: string };
   bikeSheet: {
     title: string;
     close: string;
