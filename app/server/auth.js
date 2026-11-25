@@ -25,6 +25,12 @@ export function createSupabaseAuth({ url, anonKey, fetchFn = fetch }) {
       if (down(status)) throw new AuthError('unavailable');
       if (status >= 400) throw new AuthError('link_not_sent');
     },
+    /** Mails a staff member a sign-in link that comes back to redirectTo, where they set a password. */
+    async sendStaffLink(email, redirectTo) {
+      const { status } = await call(`/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, { email, create_user: true });
+      if (down(status)) throw new AuthError('unavailable');
+      if (status >= 400) throw new AuthError('link_not_sent');
+    },
     /** Mails the password reset link. Never creates a user. The answer is the same for any address. */
     async sendResetLink(email) {
       const { status } = await call('/auth/v1/recover', { email });

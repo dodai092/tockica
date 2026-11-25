@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Pristup osoblja</title>
+<style>
+/* Owner's staff access page (layout A of Tockica/.impeccable/options/staff-access.html). Same look as the other staff
+   pages: slate page, near-white button with a slate label, no red. System fonts only. Wording is proposed, Dunia approves it. */
+:root{--page:#232a35;--card:#3a4454;--ink:#f7f7f7;--text:#e5e7eb;--muted:#c4c8d0;--line:#8791a3;--btn:#f7f7f7;--btn-text:#232a35;--btn-hover:#e0e0e0;--err:#ffb3ad}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--page);color:var(--text);font:400 16px/1.5 Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2{font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);margin:0;font-weight:800;line-height:1.2}
+h1{font-size:22px}
+h2{font-size:17px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:1px solid rgb(255 255 255/.1)}
+.bar img{height:44px;width:auto;display:block}
+main{max-width:980px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+a{color:var(--text)}
+.back{display:inline-block;padding:10px 0;font-size:14px}
+button,select{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn{min-height:48px;padding:12px 16px;font-weight:600;color:var(--btn-text);background:var(--btn);border:1px solid var(--btn);border-radius:12px}
+.btn:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.btn.plain{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.plain:hover{background:rgb(255 255 255/.08)}
+.btn:disabled{opacity:.5;cursor:default}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.msg{min-height:24px;margin:0 0 8px;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
+.msg.err{color:var(--err)}
+.box{background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:4px 16px 16px;margin:0 0 12px}
+.box .btn[type=submit]{width:100%;margin-top:16px}
+.f{margin:12px 0 0}
+label{display:block;font-size:14px;font-weight:500;margin:0 0 4px}
+input,select{display:block;width:100%;min-height:48px;padding:10px 12px;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
+input{font:inherit}
+ul{list-style:none;margin:0;padding:0}
+.item{background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;margin:0 0 8px}
+.item.on{border-color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:space-between;width:100%;min-height:64px;padding:10px 14px;text-align:left;color:var(--text);background:transparent;border:0;border-radius:12px}
+div.row{cursor:default}
+button.row:focus-visible{outline-offset:-2px}
+.who{min-width:0;overflow-wrap:anywhere}
+.who b{display:block;color:var(--ink);font:700 16px Montserrat,system-ui,sans-serif}
+.who span{display:block;font-size:14px;color:var(--muted)}
+.pill{font-size:13px;font-weight:600;border-radius:8px;padding:2px 8px;white-space:nowrap;border:1px solid var(--line);color:var(--ink)}
+.pill.waiting{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.pill.off{color:var(--muted);border-style:dashed}
+.panel{padding:0 14px 14px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">
+  <img src="/prijava-logo.svg" alt="Točkica na i">
+  <button id="logout" type="button" class="btn plain">Odjava</button>
+</div>
+<main>
+<a class="back" href="/osoblje">‹ Osoblje</a>
+<div class="top">
+  <h1>Pristup osoblja</h1>
+  <button id="addOpen" type="button" class="btn" aria-expanded="false" aria-controls="addForm" hidden>Dodaj osobu</button>
+</div>
+<p id="msg" class="msg" role="status"></p>
+
+<form id="addForm" class="box" hidden novalidate>
+  <div class="f"><label for="addName">Ime i prezime</label>
+  <input id="addName" autocomplete="off"></div>
+  <div class="f"><label for="addEmail">Email</label>
+  <input id="addEmail" type="email" autocomplete="off"></div>
+  <div class="f"><label for="addRole">Uloga</label>
+  <select id="addRole"></select></div>
+  <div class="f"><label for="addProfile">Profil trenera</label>
+  <select id="addProfile"></select></div>
+  <button type="submit" class="btn">Dodaj i pošalji link</button>
+</form>
+
+<ul id="people"></ul>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ROLE = { owner: 'Vlasnik', reception: 'Recepcija', instructor: 'Trener', admin: 'Admin' };
+  const OFFERED = ['instructor', 'reception', 'owner'];
+  const STATUS = { active: 'Aktivan račun', waiting: 'Čeka lozinku', off: 'Isključen' };
+  const FIELD = { name: 'ime i prezime', email: 'email', role: 'uloga', instructorId: 'profil trenera' };
+  const LATER = 'Trenutno nije dostupno, pokušaj kasnije.';
+  let people = [], instructors = [], openId = null;
+
+  const el = (tag, props = {}, ...kids) => {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...kids);
+    return node;
+  };
+  const button = (text, onClick, cls = 'btn plain') => el('button', { type: 'button', className: cls, textContent: text, onclick: onClick });
+  const say = (text, isError = false) => { $('msg').textContent = text; $('msg').className = isError ? 'msg err' : 'msg'; };
+
+  const api = async (path, body) => {
+    try {
+      const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+      if (r.status === 401) location.assign('/osoblje');
+      return { status: r.status, data: await r.json().catch(() => ({})) };
+    } catch {
+      return { status: 0, data: {} };
+    }
+  };
+  const problem = ({ status, data }) => {
+    if (data.fields) return `Provjeri polja: ${Object.keys(data.fields).map((k) => FIELD[k] ?? k).join(', ')}.`;
+    if (status === 409) return 'Taj email je već na popisu.';
+    if (status === 403) return 'Ovu stranicu vidi samo vlasnik.';
+    return LATER;
+  };
+
+  const options = (select, list, value) => {
+    select.replaceChildren(...list.map(([v, text]) => el('option', { value: v, textContent: text })));
+    select.value = value;
+  };
+  const fillRole = (select, value) => options(select, OFFERED.map((r) => [r, ROLE[r]]).concat(OFFERED.includes(value) ? [] : [[value, ROLE[value]]]), value);
+  const fillProfile = (select, value) => options(select, [['', 'Bez profila'], ...instructors.map((i) => [i.id, i.name])], value ?? '');
+
+  const sendLink = async (p, b) => {
+    b.disabled = true;
+    const r = await api('/api/osoblje/pristup/link', { id: p.id });
+    b.disabled = false;
+    if (r.status !== 202) return say(problem(r), true);
+    say(r.data.mailSent ? `Link je poslan na ${p.email}.` : 'Link nije poslan. Pokušaj ponovno kasnije.', !r.data.mailSent);
+  };
+
+  const change = async (p, body, done) => {
+    const r = await api('/api/osoblje/pristup/izmjena', { id: p.id, ...body });
+    if (r.status !== 200) return say(problem(r), true);
+    await load();
+    say(done);
+    $(`row-${p.id}`)?.focus();
+  };
+
+  const editForm = (p) => {
+    const role = el('select', { id: `role-${p.id}` });
+    const profile = el('select', { id: `profile-${p.id}` });
+    fillRole(role, p.role);
+    fillProfile(profile, p.instructorId);
+    const form = el('form', { hidden: true },
+      el('div', { className: 'f' }, el('label', { htmlFor: role.id, textContent: 'Uloga' }), role),
+      el('div', { className: 'f' }, el('label', { htmlFor: profile.id, textContent: 'Profil trenera' }), profile),
+      el('div', { className: 'f' }, el('button', { type: 'submit', className: 'btn', textContent: 'Spremi' })));
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      // Only what changed is sent, so a role the page does not offer is never sent back.
+      const body = {};
+      if (role.value !== p.role) body.role = role.value;
+      if (profile.value !== (p.instructorId ?? '')) body.instructorId = profile.value || null;
+      change(p, body, 'Spremljeno.');
+    });
+    return form;
+  };
+
+  const panel = (p) => {
+    const acts = el('div', { className: 'acts' });
+    const form = editForm(p);
+    if (p.status !== 'off') acts.append(button('Pošalji link ponovno', (e) => sendLink(p, e.currentTarget)));
+    const edit = button('Uredi', () => {
+      form.hidden = !form.hidden;
+      edit.setAttribute('aria-expanded', String(!form.hidden));
+      if (!form.hidden) form.querySelector('select').focus();
+    });
+    edit.setAttribute('aria-expanded', 'false');
+    acts.append(edit);
+    if (p.status === 'off') acts.append(button('Uključi pristup', () => change(p, { active: true }, `${p.name}: pristup je uključen.`)));
+    else {
+      let sure = false;
+      acts.append(button('Isključi pristup', (e) => {
+        if (sure) return void change(p, { active: false }, `${p.name}: pristup je isključen.`);
+        sure = true;
+        e.currentTarget.textContent = 'Potvrdi isključivanje';
+        say(`Za isključivanje pritisni još jednom: ${p.name}.`);
+      }));
+    }
+    return el('div', { id: `panel-${p.id}`, className: 'panel' }, acts, form);
+  };
+
+  // One person is open at a time. The list is rebuilt on every change, so a half-confirmed switch-off never survives.
+  const render = () => {
+    $('people').replaceChildren(...people.map((p) => {
+      const info = [
+        el('span', { className: 'who' }, el('b', { textContent: p.name }), el('span', { textContent: `${ROLE[p.role]} · ${p.email}` })),
+        el('span', { className: `pill ${p.status}`, textContent: STATUS[p.status] }),
+      ];
+      // The owner's own row has no actions: nobody can switch off or demote themselves.
+      if (p.self) return el('li', { className: 'item' }, el('div', { className: 'row' }, ...info));
+      const open = p.id === openId;
+      const row = el('button', { type: 'button', id: `row-${p.id}`, className: 'row' }, ...info);
+      row.setAttribute('aria-expanded', String(open));
+      row.addEventListener('click', () => {
+        openId = open ? null : p.id;
+        say('');
+        render();
+        $(`row-${p.id}`).focus();
+      });
+      return el('li', { className: open ? 'item on' : 'item' }, row, ...(open ? [panel(p)] : []));
+    }));
+  };
+
+  const load = async () => {
+    const r = await api('/api/osoblje/pristup');
+    if (r.status !== 200) return say(problem(r), true);
+    ({ people, instructors } = r.data);
+    $('addOpen').hidden = false;
+    render();
+  };
+
+  const showAdd = (open) => {
+    $('addForm').hidden = !open;
+    $('addOpen').setAttribute('aria-expanded', String(open));
+    $('addOpen').textContent = open ? 'Zatvori' : 'Dodaj osobu';
+    $('addOpen').className = open ? 'btn plain' : 'btn';
+  };
+  $('addOpen').addEventListener('click', () => {
+    const open = $('addForm').hidden;
+    say('');
+    if (open) {
+      $('addForm').reset();
+      fillRole($('addRole'), 'instructor');
+      fillProfile($('addProfile'), '');
+    }
+    showAdd(open);
+    if (open) $('addName').focus();
+  });
+
+  $('addForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submit = e.submitter ?? $('addForm').querySelector('[type=submit]');
+    submit.disabled = true;
+    const email = $('addEmail').value.trim().toLowerCase();
+    const r = await api('/api/osoblje/pristup', { name: $('addName').value, email, role: $('addRole').value, instructorId: $('addProfile').value || null });
+    submit.disabled = false;
+    if (r.status !== 201) return say(problem(r), true);
+    showAdd(false);
+    await load();
+    say(r.data.mailSent ? `Osoba je dodana. Link je poslan na ${email}.` : 'Osoba je dodana, ali link nije poslan. Otvori osobu i pošalji ga ponovno.', !r.data.mailSent);
+    $('addOpen').focus();
+  });
+
+  $('logout').addEventListener('click', async () => { await api('/api/osoblje/odjava', {}); location.assign('/osoblje'); });
+
+  load();
+})();
+</script>
+</body>
+</html>

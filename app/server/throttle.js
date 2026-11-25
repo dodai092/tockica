@@ -8,6 +8,7 @@ export const LIMITS = {
   'staff-login': { max: 5, minutes: 15 },
   'signup-mail': { max: 3, minutes: 60 },
   'reset-mail': { max: 3, minutes: 60 },
+  'staff-mail': { max: 3, minutes: 60 },
 };
 export const TOO_MANY = { error: 'Too many attempts, try again later' };
 const KEEP_HOURS = 24;

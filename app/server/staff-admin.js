@@ -1,6 +1,6 @@
 // Making a staff member and resetting a staff password without SQL (ADR 0004). Run from the command line (scripts/staff.js)
-// by someone with the service key, never from a web route: a mailed reset link would make the mailbox a second way in,
-// and the Owner password is the only barrier today. The password is returned once, the caller decides where it goes.
+// by someone with the service key. This is the fallback: staff normally set their own password by mailed link
+// (staff-password-routes.js, ADR 0004 update 2026-11-25). The password is returned once, the caller decides where it goes.
 import { randomBytes } from 'node:crypto';
 import { STAFF_ROLES } from './guard.js';
 

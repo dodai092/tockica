@@ -26,6 +26,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .btn.plain:hover{background:rgb(255 255 255/.08)}
 .card{max-width:25rem;margin:24px auto;background:var(--card);border:1px solid rgb(255 255 255/.12);border-radius:12px;padding:24px}
 .card .btn{width:100%;margin-top:8px}
+.link{display:block;margin:12px auto 0;padding:10px 0;color:var(--text);background:none;border:0;text-decoration:underline;font-size:14px}
+.slot.ok{color:var(--ink)}
+.card h2+.sub{overflow-wrap:anywhere}
 .f{margin:16px 0 0}
 label{display:block;font-size:14px;font-weight:500;margin:0 0 4px}
 input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:12px}
@@ -51,6 +54,25 @@ input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;co
   <input id="staffPassword" type="password" autocomplete="current-password" required></div>
   <p id="loginMsg" class="slot" role="alert"></p>
   <button type="submit" class="btn">Prijavi me</button>
+  <button id="forgotOpen" type="button" class="link">Zaboravljena lozinka?</button>
+</form>
+
+<form id="forgot" class="card" hidden>
+  <h2>Link za lozinku</h2>
+  <div class="f"><label for="forgotEmail">Email</label>
+  <input id="forgotEmail" type="email" autocomplete="username" required></div>
+  <p id="forgotMsg" class="slot" role="alert"></p>
+  <button type="submit" class="btn">Pošalji link</button>
+  <button id="forgotBack" type="button" class="link">Natrag na prijavu</button>
+</form>
+
+<form id="setPassword" class="card" hidden>
+  <h2>Postavi lozinku</h2>
+  <p id="setFor" class="sub"></p>
+  <div class="f"><label for="newPassword">Nova lozinka (najmanje 8 znakova)</label>
+  <input id="newPassword" type="password" minlength="8" autocomplete="new-password" required></div>
+  <p id="setMsg" class="slot" role="alert"></p>
+  <button type="submit" class="btn">Spremi i prijavi me</button>
 </form>
 
 <section id="home" hidden>
@@ -68,18 +90,49 @@ input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;co
   const TILES = [
     { roles: ['reception', 'owner'], href: '/osoblje-prijava.html', name: 'Recepcija', sub: 'Dolazak i no-show za današnje treninge' },
     { roles: ['instructor', 'owner'], href: '/moji-treninzi.html', name: 'Moji treninzi', sub: 'Tvoji treninzi i tko je prijavljen' },
+    { roles: ['owner'], href: '/pristup-osoblja.html', name: 'Pristup osoblja', sub: 'Dodaj, uredi i isključi osoblje' },
   ];
-  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  // A request that never arrives answers with status 0, so every form can say "not available".
+  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).catch(() => ({ ok: false, status: 0 }));
+  // The submit button is off while its request runs, which also stops Enter from sending it twice.
+  const onSubmit = (id, send) => $(id).addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = $(id).querySelector('[type=submit]');
+    if (button.disabled) return;
+    button.disabled = true;
+    try { await send(); } finally { button.disabled = false; }
+  });
   const loginSay = (text) => { $('loginMsg').textContent = text; };
 
-  const showLogin = () => { $('login').hidden = false; $('home').hidden = true; $('logout').hidden = true; $('staffEmail').focus(); };
+  // One signed-out form at a time.
+  const showForm = (id, focusId) => {
+    for (const f of ['login', 'forgot', 'setPassword']) $(f).hidden = f !== id;
+    $('home').hidden = true;
+    $('logout').hidden = true;
+    $(focusId).focus();
+  };
+  const showLogin = () => showForm('login', 'staffEmail');
+  const forgotSay = (text, isError = true) => { $('forgotMsg').textContent = text; $('forgotMsg').className = isError ? 'slot' : 'slot ok'; };
+  const showForgot = (text = '') => { showForm('forgot', 'forgotEmail'); forgotSay(text); };
+  const EXPIRED = 'Poveznica nije ispravna ili je istekla. Zatraži novu.';
+
+  // Supabase sends the person back here with the token after the "#". A server never sees it, so this page reads it
+  // and takes it out of the address bar at once. It stays in memory only.
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const accessToken = hash.get('access_token');
+  const linkError = hash.get('error_code');
+  if (location.hash) history.replaceState(null, '', location.pathname);
+  // Display only: the server checks the token with Supabase and takes the address from there.
+  const emailFromToken = (tok) => {
+    try { return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email ?? ''; } catch { return ''; }
+  };
 
   const start = async () => {
     const me = await api('/api/osoblje/ja');
     if (me.status === 401) return showLogin();
     if (!me.ok) { showLogin(); return loginSay('Trenutno nije dostupno, pokušaj kasnije.'); }
     const person = await me.json();
-    $('login').hidden = true;
+    for (const f of ['login', 'forgot', 'setPassword']) $(f).hidden = true;
     $('home').hidden = false;
     $('logout').hidden = false;
     $('who').textContent = person.name;
@@ -100,17 +153,43 @@ input{display:block;width:100%;min-height:48px;padding:12px 14px;font:inherit;co
     $('title').focus();
   };
 
-  $('login').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  onSubmit('login', async () => {
     loginSay('');
     const r = await api('/api/staff-login', 'POST', { email: $('staffEmail').value, password: $('staffPassword').value });
     if (r.status === 200) { $('staffPassword').value = ''; return start(); }
-    loginSay(r.status === 429 ? 'Previše pokušaja. Pokušaj ponovno za 15 minuta.' : r.status === 503 ? 'Trenutno nije dostupno, pokušaj kasnije.' : 'Pogrešan email ili lozinka.');
+    loginSay(r.status === 429 ? 'Previše pokušaja. Pokušaj ponovno za 15 minuta.' : r.status === 401 ? 'Pogrešan email ili lozinka.' : 'Trenutno nije dostupno, pokušaj kasnije.');
   });
 
-  $('logout').addEventListener('click', async () => { await api('/api/osoblje/odjava', 'POST', {}); $('tiles').replaceChildren(); $('err').textContent = ''; loginSay(''); showLogin(); });
+  $('logout').addEventListener('click', async () => {
+    const r = await api('/api/osoblje/odjava', 'POST', {});
+    // Never show the signed-out screen while the session may still be open, for example on a shared computer.
+    if (!r.ok && r.status !== 401) { $('err').textContent = 'Odjava nije uspjela. Pokušaj ponovno.'; return; }
+    $('tiles').replaceChildren(); $('err').textContent = ''; loginSay(''); showLogin();
+  });
 
-  start();
+  $('forgotOpen').addEventListener('click', () => { loginSay(''); $('forgotEmail').value = $('staffEmail').value; showForgot(); });
+  $('forgotBack').addEventListener('click', () => { loginSay(''); showLogin(); });
+
+  onSubmit('forgot', async () => {
+    const r = await api('/api/staff-password/link', 'POST', { email: $('forgotEmail').value });
+    forgotSay(r.status === 202 ? 'Ako ta adresa pripada osoblju, poslali smo link. Provjeri email.' : r.status === 400 ? 'Email adresa nije ispravna.' : 'Trenutno nije dostupno, pokušaj kasnije.', r.status !== 202);
+  });
+
+  onSubmit('setPassword', async () => {
+    $('setMsg').textContent = '';
+    const r = await api('/api/staff-password', 'POST', { accessToken, password: $('newPassword').value });
+    if (r.status === 200) { $('newPassword').value = ''; return start(); }
+    if (r.status === 401) return showForgot(EXPIRED);
+    // A new link cannot help here, so the person lands on the login form.
+    if (r.status === 403) { showLogin(); return loginSay('Ovaj račun nema pristup.'); }
+    $('setMsg').textContent = r.status === 400 ? 'Lozinka je prekratka ili preslaba.' : 'Trenutno nije dostupno, pokušaj kasnije.';
+  });
+
+  if (accessToken) {
+    $('setFor').textContent = emailFromToken(accessToken);
+    showForm('setPassword', 'newPassword');
+  } else if (linkError) showForgot(EXPIRED);
+  else start();
 })();
 </script>
 </body>

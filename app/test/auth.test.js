@@ -64,3 +64,13 @@ test('sendResetLink asks Supabase to recover the account and never creates a use
     await assert.rejects(() => make([{ status }]).auth.sendResetLink('a@example.com'), (e) => e instanceof AuthError && e.code === 'unavailable');
   }
 });
+
+test('sendStaffLink mails a sign-in link that comes back to the given page, and may create the user', async () => {
+  const { sent, auth } = make([{ status: 200 }]);
+  await auth.sendStaffLink('dora@example.com', 'https://studio.test/osoblje');
+  assert.equal(sent[0].url, 'https://p.supabase.co/auth/v1/otp?redirect_to=https%3A%2F%2Fstudio.test%2Fosoblje');
+  assert.deepEqual(sent[0].body, { email: 'dora@example.com', create_user: true });
+  for (const status of [429, 500]) {
+    await assert.rejects(() => make([{ status }]).auth.sendStaffLink('a@example.com', 'https://x.test/osoblje'), (e) => e.code === 'unavailable');
+  }
+});

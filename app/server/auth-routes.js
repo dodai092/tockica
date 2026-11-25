@@ -5,6 +5,7 @@ import { AuthError } from './auth.js';
 import { signUp, validateSignup, SignupError, DuplicateEmailError } from './signup.js';
 import { createSession, endSession, endAllSessions, sessionToken } from './session.js';
 import { isBlocked, recordAttempt, clearAttempts, TOO_MANY } from './throttle.js';
+import { endStaffSessionsOfUser } from './staff-session.js';
 
 const json = (body, status = 200, headers) => Response.json(body, { status, headers });
 const readJson = (req) => req.json().catch(() => ({}));
@@ -78,6 +79,7 @@ export function signupHandler({ db, auth, now = () => new Date() }) {
       if (!(e instanceof AuthError)) throw e;
       return e.code === 'weak_password' ? json({ fields: { password: 'too weak' } }, 400) : unavailable();
     }
+    await endStaffSessionsOfUser(db, proven.userId);
     let account;
     try {
       account = await signUp(db, { ...body, email, authUserId: proven.userId }, when);
@@ -143,6 +145,7 @@ export function passwordResetHandler({ db, auth, now = () => new Date() }) {
         ? json({ fields: { password: 'too weak' } }, 400)
         : json({ error: 'Not available right now, try again later' }, 503);
     }
+    await endStaffSessionsOfUser(db, proven.userId);
     await endAllSessions(db, account.id);
     const { cookie } = await createSession(db, account.id, when);
     return json({ ok: true }, 200, { 'set-cookie': cookie });

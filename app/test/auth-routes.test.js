@@ -8,6 +8,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { openTestDb } from './db.js';
 import { createRoute } from '../server/index.js';
 import { AuthError } from '../server/auth.js';
+import { createStaffSession } from '../server/staff-session.js';
 
 let db, auth, clock;
 const now = () => clock;
@@ -280,4 +281,47 @@ test('a short password is refused and nothing changes', async () => {
   assert.deepEqual((await res.json()).fields, { password: 'too short' });
   assert.equal(auth.users.get(EMAIL).password, form.password);
   assert.equal((await get(route, '/api/me', cookie)).status, 200);
+});
+
+// One email, one Supabase user, one password (plan 2026-11-25-staff-access, Task 3). So a password change through the
+// customer pages also ends that person's staff sessions.
+const staffCookies = async (userId) => {
+  await db.exec('delete from staff_sessions; delete from staff');
+  await db.query(
+    `insert into staff (id, supabase_user_id, name, email, role, active) values
+       ('st_ana', $1, 'Ana Horvat', 'ana@example.com', 'reception', true),
+       ('st_other', 'sb_other', 'Other Person', 'other@studio.test', 'reception', true)`,
+    [userId]
+  );
+  const cookies = {};
+  for (const id of ['st_ana', 'st_other']) cookies[id] = (await createStaffSession(db, id, clock)).cookie.split(';')[0];
+  return cookies;
+};
+
+test('a signup by a staff email ends that staff session and nobody else\'s', async () => {
+  const route = app();
+  const accessToken = await link(route, EMAIL);
+  const staff = await staffCookies('sb_1');
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_ana)).status, 200);
+  assert.equal((await post(route, '/api/signup', { ...form, accessToken })).status, 201);
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_ana)).status, 401);
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_other)).status, 200);
+});
+
+test('a password reset by a staff email ends that staff session and nobody else\'s', async () => {
+  const route = app();
+  await signedUp(route);
+  const staff = await staffCookies('sb_1');
+  const res = await post(route, '/api/password/reset', { accessToken: auth.clickLink(EMAIL), password: 'a-new-long-password' });
+  assert.equal(res.status, 200);
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_ana)).status, 401);
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_other)).status, 200);
+});
+
+test('a refused reset leaves the staff session alone', async () => {
+  const route = app();
+  await signedUp(route);
+  const staff = await staffCookies('sb_1');
+  await post(route, '/api/password/reset', { accessToken: auth.clickLink(EMAIL), password: 'short' });
+  assert.equal((await get(route, '/api/osoblje/ja', staff.st_ana)).status, 200);
 });

@@ -44,6 +44,11 @@ export async function getStaffSession(db, req, now = new Date()) {
   return { kind: 'staff', staffId: row.staff_id, role: row.role, cookie: cookie(SESSION_COOKIE, token, '/api', (end.getTime() - now.getTime()) / 1000) };
 }
 
+/** A staff member who also rides has one login for both, so a password change anywhere ends their staff sessions. */
+export async function endStaffSessionsOfUser(db, supabaseUserId) {
+  await db.query('delete from staff_sessions where staff_id in (select id from staff where supabase_user_id = $1)', [supabaseUserId]);
+}
+
 export async function endStaffSession(db, req) {
   const token = cookieValue(req, SESSION_COOKIE);
   if (token) await db.query('delete from staff_sessions where token_hash = $1', [hash(token)]);

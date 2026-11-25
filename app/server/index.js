@@ -7,6 +7,8 @@ import { createSupabaseAuth } from './auth.js';
 import { getCustomerSession } from './session.js';
 import { getStaffSession } from './staff-session.js';
 import { staffLoginHandler, staffLogoutHandler, staffMeHandler } from './staff-routes.js';
+import { staffPasswordLinkHandler, staffPasswordHandler } from './staff-password-routes.js';
+import { staffAccessHandler, staffAccessEditHandler, staffAccessLinkHandler } from './staff-access-routes.js';
 import { checkinListHandler, rosterHandler, statusHandler, trainerClassesHandler, trainerRosterHandler } from './checkin-routes.js';
 import { handleHealth } from './health.js';
 import { scheduleHandler } from './public.js';
@@ -14,7 +16,8 @@ import { signupLinkHandler, signupHandler, passwordLinkHandler, passwordResetHan
 
 const envAuth = (env) => (env.SUPABASE_URL && env.SUPABASE_ANON_KEY ? createSupabaseAuth({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }) : null);
 
-export function createRoute({ pool = getPool, auth = envAuth(process.env), now } = {}) {
+// siteUrl: where the mailed staff link comes back to. Netlify sets URL to the site's main address.
+export function createRoute({ pool = getPool, auth = envAuth(process.env), now, siteUrl = process.env.URL } = {}) {
   const clock = now ?? (() => new Date());
   const getSession = async (req, route) => {
     const db = route.area === 'open' ? null : pool(process.env);
@@ -28,7 +31,7 @@ export function createRoute({ pool = getPool, auth = envAuth(process.env), now }
   const use = (build, { needsAuth = false } = {}) => (req, session) => {
     const db = pool(process.env);
     if (!db || (needsAuth && !auth)) return unavailable();
-    return build({ db, auth, now: clock })(req, session);
+    return build({ db, auth, now: clock, siteUrl })(req, session);
   };
 
   r.open('/api/health', (req) => handleHealth(req, process.env, pool));
@@ -39,6 +42,8 @@ export function createRoute({ pool = getPool, auth = envAuth(process.env), now }
   r.open('/api/password/reset', use(passwordResetHandler, { needsAuth: true }));
   r.open('/api/login', use(loginHandler, { needsAuth: true }));
   r.open('/api/staff-login', use(staffLoginHandler, { needsAuth: true }));
+  r.open('/api/staff-password/link', use(staffPasswordLinkHandler, { needsAuth: true }));
+  r.open('/api/staff-password', use(staffPasswordHandler, { needsAuth: true }));
   r.staff('/api/osoblje/odjava', STAFF_ROLES, use(staffLogoutHandler));
   r.staff('/api/osoblje/ja', STAFF_ROLES, use(staffMeHandler));
   r.staff('/api/osoblje/prijava/treninzi', ['reception', 'owner'], use(checkinListHandler));
@@ -46,6 +51,9 @@ export function createRoute({ pool = getPool, auth = envAuth(process.env), now }
   r.staff('/api/osoblje/prijava/status', ['reception', 'owner'], use(statusHandler));
   r.staff('/api/osoblje/moji-treninzi', ['instructor', 'owner'], use(trainerClassesHandler));
   r.staff('/api/osoblje/moji-treninzi/trening', ['instructor', 'owner'], use(trainerRosterHandler));
+  r.staff('/api/osoblje/pristup', ['owner'], use(staffAccessHandler));
+  r.staff('/api/osoblje/pristup/izmjena', ['owner'], use(staffAccessEditHandler));
+  r.staff('/api/osoblje/pristup/link', ['owner'], use(staffAccessLinkHandler, { needsAuth: true }));
   r.customer('/api/logout', use(logoutHandler));
   r.customer('/api/me', use(meHandler));
   return (req) => r.handle(req);
