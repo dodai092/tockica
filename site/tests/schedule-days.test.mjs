@@ -1,6 +1,7 @@
 // Studio-day helpers behind the schedule page (src/lib/schedule-days.ts).
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { addDays, dayOfWeek, groupByDay, isBookable, mondayOf, studioDay } from '../src/lib/schedule-days.ts';
 
 test('studioDay uses Zagreb time, not UTC', () => {
@@ -51,12 +52,24 @@ test('isBookable opens up to 14 days ahead, later days are not open yet', () => 
   assert.equal(isBookable('2026-12-07T07:30:00+01:00', sunday, '2000-01-01'), false);
 });
 
-test('the 4 January classes open on 21 December, two weeks ahead', () => {
-  assert.equal(isBookable('2027-01-04T07:30:00+01:00', new Date('2026-12-21T09:00:00+01:00'), '2026-12-21'), true);
+// Antun, 2026-11-25 (from Dunia): booking opens on 4 January, the same day as the first class and the same day the
+// app's database allows (settings.booking_opens_on).
+test('by default nothing can be booked before 4 January, and from that day it can', () => {
+  assert.equal(isBookable('2027-01-04T07:30:00+01:00', new Date('2027-01-03T23:30:00+01:00')), false);
+  assert.equal(isBookable('2027-01-04T07:30:00+01:00', new Date('2027-01-04T00:30:00+01:00')), true);
+  assert.equal(isBookable('2027-01-18T07:30:00+01:00', new Date('2027-01-04T09:00:00+01:00')), true);
+  assert.equal(isBookable('2027-01-19T07:30:00+01:00', new Date('2027-01-04T09:00:00+01:00')), false);
+});
+
+test('no copy still says booking opens on 21 December, in either language', async () => {
+  for (const lang of ['hr', 'en']) {
+    const copy = await readFile(new URL(`../src/i18n/copy/${lang}.ts`, import.meta.url), 'utf8');
+    assert.doesNotMatch(copy, /21\.12|21\. ?prosinca|21 December|December 21|Dec 21/, lang);
+  }
 });
 
 test('isBookable is false before the opening day, whatever the week', () => {
-  const now = new Date('2026-12-20T20:00:00+01:00');
-  assert.equal(isBookable('2027-01-03T07:30:00+01:00', now, '2026-12-21'), false);
-  assert.equal(isBookable('2026-12-22T07:30:00+01:00', new Date('2026-12-21T08:00:00+01:00'), '2026-12-21'), true);
+  const now = new Date('2027-01-03T20:00:00+01:00');
+  assert.equal(isBookable('2027-01-03T21:00:00+01:00', now, '2027-01-04'), false);
+  assert.equal(isBookable('2027-01-05T07:30:00+01:00', new Date('2027-01-04T08:00:00+01:00'), '2027-01-04'), true);
 });

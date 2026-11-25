@@ -157,7 +157,7 @@ export const en: Copy = {
     detailsHeading: 'Offer terms',
     deadline: 'Join the waitlist by 31 December to unlock it.',
     terms:
-      'Available to the first 30 people who purchase the offer by 31 December. After joining the waitlist, you’ll receive all the information about purchasing the offer and booking classes via e-mail. Your 30 days start on January 4, with the first class in the new Točkica na i. Bookings for the first classes open on 21 December, two weeks in advance.',
+      'Available to the first 30 people who purchase the offer by 31 December. After joining the waitlist, you’ll receive all the information about purchasing the offer and booking classes via e-mail. Your 30 days start on January 4, with the first class in the new Točkica na i. Bookings for the first classes open on 4 January.',
     notes: [
       '*Subject to class availability.',
       '*The offer is non-transferable and may only be used by the person whose account is linked to the offer.',
@@ -193,9 +193,8 @@ export const en: Copy = {
       { title: 'Ride for 30 days', text: 'Your 30 days start on January 4.' },
     ],
     timeline: [
-      { date: 'Dec 21', label: 'bookings open' },
       { date: 'Dec 31', label: 'last day to join and buy' },
-      { date: 'Jan 4', label: 'we open, your 30 days start' },
+      { date: 'Jan 4', label: 'we open, booking and your 30 days start' },
     ],
   },
   waitlistThanks: {
@@ -208,7 +207,7 @@ export const en: Copy = {
   schedulePage: {
     title: 'Schedule',
     description: 'The class schedule at Točkica na i.',
-    soon: 'Classes start on 4 January and you can book up to 2 weeks ahead. Booking goes live on 21 December.',
+    soon: 'Classes and booking start on 4 January, and you can book up to 2 weeks ahead.',
     demo: { text: 'Try the booking demo (not a real booking).', link: 'Open the demo' },
     weeks: 'Week',
     prevWeek: 'Previous week',
@@ -255,7 +254,7 @@ export const en: Copy = {
     loginTitle: 'Log in',
     soonTitle: 'Booking opens soon',
     soonText: 'Online booking opens soon. This is not a real booking yet.',
-    preview: 'Classes start on 4 January. Booking goes live on 21 December.',
+    preview: 'Classes and booking start on 4 January.',
     changeBike: 'Change bike',
     backToSchedule: 'Back to the schedule',
     waitlist: 'Waiting list',

@@ -157,7 +157,7 @@ export const hr: Copy = {
     detailsHeading: 'Uvjeti ponude',
     deadline: 'Prijavi se na listu čekanja do 31. prosinca i otključaj ponudu.',
     terms:
-      'Ponuda je dostupna za prvih 30 osoba koje je kupe do 31.12. Nakon prijave na listu čekanja, sve potrebne informacije o kupnji ponude i rezervacijama dobiti ćeš na svoju e-mail adresu. Tvojih 30 dana počinje 4. siječnja, s prvim treningom u Točkici na i. Rezervacije za prve treninge otvaraju se 21.12., dva tjedna unaprijed.',
+      'Ponuda je dostupna za prvih 30 osoba koje je kupe do 31.12. Nakon prijave na listu čekanja, sve potrebne informacije o kupnji ponude i rezervacijama dobiti ćeš na svoju e-mail adresu. Tvojih 30 dana počinje 4. siječnja, s prvim treningom u Točkici na i. Rezervacije za prve treninge otvaraju se 4.1.',
     notes: [
       '*Rezervacije ovise o dostupnosti mjesta na treningu.',
       '*Ponuda je neprenosiva i može je koristiti samo osoba čiji je korisnički račun povezan s ponudom.',
@@ -190,9 +190,8 @@ export const hr: Copy = {
       { title: 'Vozi 30 dana', text: 'Tvojih 30 dana počinje 4. siječnja.' },
     ],
     timeline: [
-      { date: '21.12.', label: 'otvaramo rezervacije' },
       { date: '31.12.', label: 'zadnji dan za prijavu i kupnju' },
-      { date: '4.1.', label: 'otvaramo, kreće tvojih 30 dana' },
+      { date: '4.1.', label: 'otvaramo, kreću rezervacije i tvojih 30 dana' },
     ],
   },
   waitlistThanks: {
@@ -205,7 +204,7 @@ export const hr: Copy = {
   schedulePage: {
     title: 'Raspored',
     description: 'Raspored treninga u Točkici na i.',
-    soon: 'Treninzi počinju 4. siječnja, a termine možeš rezervirati do 2 tjedna unaprijed. Rezervacije kreću 21. prosinca.',
+    soon: 'Treninzi i rezervacije kreću 4. siječnja, a termine možeš rezervirati do 2 tjedna unaprijed.',
     demo: { text: 'Isprobaj demo rezervacija (nije prava rezervacija).', link: 'Otvori demo' },
     weeks: 'Tjedan',
     prevWeek: 'Prethodni tjedan',
@@ -252,7 +251,7 @@ export const hr: Copy = {
     loginTitle: 'Prijava',
     soonTitle: 'Rezervacije uskoro',
     soonText: 'Online rezervacija uskoro stiže. Ovo još nije prava rezervacija.',
-    preview: 'Treninzi počinju 4. siječnja. Rezervacije kreću 21. prosinca.',
+    preview: 'Treninzi i rezervacije kreću 4. siječnja.',
     changeBike: 'Promijeni bicikl',
     backToSchedule: 'Natrag na raspored',
     waitlist: 'Lista čekanja',

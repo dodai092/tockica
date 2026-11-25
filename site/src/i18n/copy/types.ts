@@ -126,8 +126,8 @@ export type Copy = {
     birthDateWhy: string;
     stepsHeading: string;
     steps: [{ title: string; text: string }, { title: string; text: string }, { title: string; text: string }];
-    /** Three dates in the offer details block, desktop only: bookings open, last day to join and buy, opening. */
-    timeline: [{ date: string; label: string }, { date: string; label: string }, { date: string; label: string }];
+    /** Two dates in the offer details block, desktop only: last day to join and buy, then opening and booking. */
+    timeline: [{ date: string; label: string }, { date: string; label: string }];
   };
   waitlistThanks: { title: string; text: string; instagram: string; pendingMissing: string; back: string };
   schedulePage: {
