@@ -9,7 +9,6 @@ import OfferDetails from '~/components/client/home/OfferDetails.astro';
 import HowItWorks from '~/components/client/home/HowItWorks.astro';
 import Faq from '~/components/client/home/Faq.astro';
 import OpeningHours from '~/components/client/home/OpeningHours.astro';
-import SpinBike from '~/components/client/SpinBike.astro';
 import wordsArt from '~/assets/images/hero-words.png';
 import { getCopy } from '~/i18n';
 import type { Lang } from '~/i18n';
@@ -42,13 +41,6 @@ const t = copy.waitlist;
       class="absolute inset-0 -z-20 h-full w-full origin-[88%_55%] scale-[1.6] md:scale-[1.9] object-cover object-[88%_55%]"
     />
     <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/70 via-black/20 to-black/0" aria-hidden="true"></div>
-    {/* Desktop: the bike stands in the right half of the closing band, beside the claim. */}
-    <SpinBike
-      variant="slot"
-      fill="rgb(0 0 0)"
-      dim={0.7}
-      class="bottom-0 right-[max(1.5rem,calc(50%_-_38.5rem))] w-[470px]"
-    />
     <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-36">
       <p class="max-w-3xl font-heading text-3xl font-extrabold leading-tight tracking-tight text-balance md:text-6xl">
         {copy.home.about.line}
